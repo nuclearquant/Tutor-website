@@ -35,8 +35,9 @@ var NZ = (function () {
 
   function blank() {
     return {
-      admin: { username: 'admin', pinHash: hash('1234') },
-      tutors: [], students: [], lessons: [], messages: [], activity: [],
+      admin: { username: 'admin', pinHash: hash('1234'), phone: '', photo: '' },
+      tutors: [], students: [], lessons: [], messages: [],
+      complaints: [], notices: [], activity: [],
       seq: 1
     };
   }
@@ -54,14 +55,26 @@ var NZ = (function () {
 
   /* older saved data may predate accounts — fill the gaps in place */
   function migrate(d) {
-    if (!d.admin) d.admin = { username: 'admin', pinHash: hash('1234') };
+    if (!d.admin) d.admin = { username: 'admin', pinHash: hash('1234'), phone: '', photo: '' };
+    if (!('phone' in d.admin)) d.admin.phone = '';
+    if (!('photo' in d.admin)) d.admin.photo = '';
     if (!d.tutors) d.tutors = [];
     if (!d.activity) d.activity = [];
+    if (!d.complaints) d.complaints = [];
+    if (!d.notices) d.notices = [];
+    d.tutors.forEach(function (t) {
+      if (!('photo' in t)) t.photo = '';
+      if (!('degree' in t)) t.degree = '';
+    });
     d.students.forEach(function (s) {
       if (!s.status) s.status = 'active';
       if (!('tutorId' in s)) s.tutorId = d.tutors[0] ? d.tutors[0].id : null;
       if (!('username' in s)) s.username = '';
       if (!('password' in s)) s.password = '';
+      if (!('photo' in s)) s.photo = '';
+    });
+    d.lessons.forEach(function (l) {
+      if (!l.flags) l.flags = {};
     });
   }
 
@@ -187,6 +200,8 @@ var NZ = (function () {
       });
     }
     logEvent('website', 'New application', (s.firstName + ' ' + s.surname).trim() + ' — ' + (s.level || 'level not set'));
+    notify('application', 'New booking: ' + (s.firstName + ' ' + s.surname).trim(),
+           (s.level || 'level not set') + ' · ' + ((s.subjects || []).join(', ') || 'no subjects') + ' · ' + (s.phone || 'no phone'), true);
     save();
     return s;
   }
@@ -289,8 +304,30 @@ var NZ = (function () {
 
   function updateLesson(lid, patch) {
     var l = lesson(lid); if (!l) return;
+    var hadTeams = !!l.teamsUrl, wasStatus = l.status;
     Object.keys(patch).forEach(function (k) { l[k] = patch[k]; });
+
+    /* the admin wants the Teams link the moment a tutor makes the meeting */
+    if (!hadTeams && l.teamsUrl) {
+      notify('teams', 'Teams link added: ' + studentName(l.studentId),
+             l.subject + ' · ' + prettyDate(l.date) + ' ' + l.start + ' · ' + l.teamsUrl);
+      logEvent(actorLabel(), 'Added Teams link', studentName(l.studentId) + ' — ' + prettyDate(l.date));
+    }
+    if (patch.status && patch.status !== wasStatus) {
+      logEvent(actorLabel(), 'Lesson marked ' + (STATUS[l.status] ? STATUS[l.status].label : l.status),
+               studentName(l.studentId) + ' — ' + prettyDate(l.date));
+      if (l.status === 'done' || l.status === 'missed') {
+        notify('lesson', studentName(l.studentId) + ': ' + STATUS[l.status].label,
+               l.subject + ' · ' + prettyDate(l.date));
+      }
+    }
     save();
+  }
+
+  /* every lesson with a Teams link, newest first — the admin's Teams list */
+  function teamsLessons() {
+    return lessons().filter(function (l) { return !!l.teamsUrl; })
+      .sort(function (a, b) { return (b.date + b.start).localeCompare(a.date + a.start); });
   }
 
   function removeLesson(lid) {
@@ -364,13 +401,15 @@ var NZ = (function () {
     if (ok) { setActor('admin', 'Tapuwa'); logEvent('Admin', 'Signed in', ''); save(); }
     return ok;
   }
-  function setAdmin(u, pin) {
+  function setAdmin(u, pin, phone) {
     var a = load().admin;
     if (u) a.username = String(u).trim();
     if (pin) a.pinHash = hash(pin);
+    if (phone != null) a.phone = String(phone).trim();
     logEvent('Admin', 'Updated admin login', '');
     save();
   }
+  function adminPhone() { return load().admin.phone || ''; }
 
   /* =========================================================== TUTORS */
   function tutors() { return load().tutors.slice(); }
@@ -399,12 +438,15 @@ var NZ = (function () {
       name: a.name || '',
       email: a.email || '',
       phone: a.phone || '',
+      degree: a.degree || '',      /* highest qualification, shown on their name tag */
+      photo: a.photo || '',
       pinHash: '',                 /* empty until the tutor sets it */
       active: true,
       joined: today()
     };
     d.tutors.push(t);
     logEvent('Admin', 'Registered tutor', t.name + ' (' + t.username + ')');
+    notify('account', 'Tutor registered', t.name + ' — send them their sign-in link');
     save();
     return t;
   }
@@ -473,6 +515,242 @@ var NZ = (function () {
     var mine = {};
     studentsByTutor(tid).forEach(function (s) { mine[s.id] = true; });
     return lessons().filter(function (l) { return mine[l.studentId]; });
+  }
+
+  /* ====================================================== NOTIFICATIONS */
+  /* Everything the admin should know about, newest first. The dashboard
+     shows these with an unread count, and any of them can be pushed to
+     the admin's WhatsApp in one tap.                                    */
+  function notify(kind, title, detail, urgent) {
+    var d = db || load();
+    if (!d.notices) d.notices = [];
+    d.notices.unshift({
+      id: 'ntc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+      at: new Date().toISOString(),
+      kind: kind,                 /* application | lesson | teams | complaint | account */
+      title: title,
+      detail: detail || '',
+      urgent: !!urgent,
+      read: false
+    });
+    if (d.notices.length > 400) d.notices.length = 400;
+  }
+  function notices(kind) {
+    var all = load().notices.slice();
+    if (kind) all = all.filter(function (n) { return n.kind === kind; });
+    return all;
+  }
+  function unreadNotices() {
+    return load().notices.filter(function (n) { return !n.read; }).length;
+  }
+  function markNoticeRead(id) {
+    var n = load().notices.filter(function (x) { return x.id === id; })[0];
+    if (n && !n.read) { n.read = true; save(); }
+  }
+  function markAllNoticesRead() {
+    var touched = false;
+    load().notices.forEach(function (n) { if (!n.read) { n.read = true; touched = true; } });
+    if (touched) save();
+  }
+
+  /* the unread notifications written out for a WhatsApp message to yourself */
+  function noticeDigest(onlyUnread) {
+    var list = load().notices.filter(function (n) { return onlyUnread ? !n.read : true; }).slice(0, 25);
+    if (!list.length) return 'NUCLEAR-ZONE — nothing new right now.';
+    var lines = ['NUCLEAR-ZONE — ' + list.length + ' update' + (list.length === 1 ? '' : 's'), ''];
+    list.forEach(function (n) {
+      lines.push('• ' + (n.urgent ? '[!] ' : '') + n.title + (n.detail ? ' — ' + n.detail : '') +
+                 '  (' + shortWhen(n.at) + ')');
+    });
+    return lines.join('\n');
+  }
+  function shortWhen(iso) {
+    var d = new Date(iso);
+    return prettyDate(d.toISOString().slice(0, 10)) + ' ' +
+           pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  /* ------------------------------------------------- the lesson watcher */
+  /* Called on a timer by the admin dashboard. It notices when a lesson is
+     about to start, has started, or has ended, and raises each of those
+     once. Pending lessons close to their slot are flagged as urgent —
+     nobody has accepted them yet.                                       */
+  function checkLessons() {
+    var d = load(), now = new Date(), changed = false;
+    d.lessons.forEach(function (l) {
+      if (!l.flags) l.flags = {};
+      var start = new Date(l.date + 'T' + l.start);
+      var end = new Date(l.date + 'T' + l.end);
+      var who = studentName(l.studentId);
+      var mins = (start - now) / 60000;
+
+      /* still pending and the slot is within a day — chase it */
+      if (l.status === 'pending' && mins > 0 && mins < 1440 && !l.flags.chase) {
+        l.flags.chase = true; changed = true;
+        notify('lesson', 'Still pending: ' + who,
+               l.subject + ' on ' + prettyDate(l.date) + ' at ' + l.start + ' — not accepted yet', true);
+      }
+      /* the lesson is under way */
+      if (now >= start && now < end && !l.flags.live && (l.status === 'accepted' || l.status === 'pending')) {
+        l.flags.live = true; changed = true;
+        notify('lesson', 'Lesson started: ' + who,
+               l.subject + (l.topic ? ' — ' + l.topic : '') + ' with ' + tutorNameForStudent(l.studentId));
+      }
+      /* the lesson has run its course */
+      if (now >= end && !l.flags.done && l.status !== 'done' && l.status !== 'declined' && l.status !== 'missed') {
+        l.flags.done = true; changed = true;
+        notify('lesson', 'Lesson finished: ' + who,
+               l.subject + ' ended at ' + l.end + ' — mark it Taught or Missed', true);
+      }
+    });
+    if (changed) save();
+    return changed;
+  }
+  function tutorNameForStudent(sid) {
+    var s = student(sid);
+    return s ? tutorName(s.tutorId) : 'a tutor';
+  }
+
+  /* ========================================================= COMPLAINTS */
+  /* A private line from one student or tutor straight to the admin. It is
+     kept apart from the tutor/student lesson chat on purpose.           */
+  function complaints(partyType, partyId) {
+    var all = load().complaints.slice();
+    if (partyType) all = all.filter(function (c) {
+      return c.partyType === partyType && c.partyId === partyId;
+    });
+    return all.sort(function (a, b) { return a.at.localeCompare(b.at); });
+  }
+
+  function addComplaint(partyType, partyId, from, text) {
+    if (!text || !String(text).trim()) return null;
+    var d = load();
+    var c = {
+      id: id('cmp'),
+      partyType: partyType,        /* 'student' or 'tutor' */
+      partyId: partyId,
+      from: from,                  /* 'student' | 'tutor' | 'admin' */
+      text: String(text).trim(),
+      at: new Date().toISOString(),
+      read: false
+    };
+    d.complaints.push(c);
+    if (from !== 'admin') {
+      var who = partyType === 'tutor' ? tutorName(partyId) : studentName(partyId);
+      notify('complaint', 'Message to you from ' + who,
+             String(text).trim().slice(0, 90), true);
+    }
+    save();
+    return c;
+  }
+
+  /* how many are waiting on the given side to read them */
+  function unreadComplaints(side, partyType, partyId) {
+    return complaints(partyType, partyId).filter(function (c) {
+      return c.from !== side && !c.read;
+    }).length;
+  }
+  function markComplaintsRead(side, partyType, partyId) {
+    var touched = false;
+    complaints(partyType, partyId).forEach(function (c) {
+      if (c.from !== side && !c.read) { c.read = true; touched = true; }
+    });
+    if (touched) save();
+  }
+  /* everyone who has ever written in, for the admin's list */
+  function complaintParties() {
+    var seen = {}, out = [];
+    load().complaints.forEach(function (c) {
+      var k = c.partyType + ':' + c.partyId;
+      if (seen[k]) return;
+      seen[k] = true;
+      out.push({ partyType: c.partyType, partyId: c.partyId });
+    });
+    return out;
+  }
+
+  /* ======================================================= QUIET READING */
+  /* The admin's oversight view. It returns the lesson chat WITHOUT
+     touching any read flag, so opening it changes nothing that the tutor
+     or student would ever see on their own screen.                      */
+  function readThreadQuietly(sid) { return messages(sid); }
+  function threadSummaries() {
+    return load().students
+      .filter(function (s) { return s.status !== 'applicant'; })
+      .map(function (s) {
+        var m = messages(s.id);
+        return {
+          studentId: s.id,
+          name: studentName(s.id),
+          tutor: tutorName(s.tutorId),
+          count: m.length,
+          last: m.length ? m[m.length - 1] : null
+        };
+      })
+      .filter(function (t) { return t.count > 0; })
+      .sort(function (a, b) { return b.last.at.localeCompare(a.last.at); });
+  }
+
+  /* ==================================================== PASSWORD RESETS */
+  /* The admin can mint a new password for a student, and can clear a
+     tutor's PIN so the tutor chooses a fresh one on their next sign-in.
+     Nobody, including the admin, can read an existing tutor PIN back.   */
+  function resetStudentPassword(sid) {
+    var s = student(sid); if (!s) return null;
+    if (!s.username) s.username = uniqueUsername(s.firstName || 'student');
+    s.password = newPassword();
+    logEvent('Admin', 'Reset student password', studentName(sid));
+    notify('account', 'Password reset', studentName(sid) + ' — send them the new one');
+    save();
+    return { username: s.username, password: s.password };
+  }
+  function resetTutorPin(tid) {
+    var t = tutor(tid); if (!t) return false;
+    t.pinHash = '';
+    logEvent('Admin', 'Cleared tutor PIN', t.name);
+    notify('account', 'Tutor PIN cleared', t.name + ' will choose a new PIN at next sign-in');
+    save();
+    return true;
+  }
+
+  /* ============================================================ PHOTOS */
+  /* Stored as a small data URL. The dashboards shrink the picture before
+     it ever reaches here, so the browser store stays well under its
+     limit — see photo handling in the dashboards.                       */
+  function setPhoto(kind, ident, dataUrl) {
+    if (kind === 'student') { var s = student(ident); if (s) s.photo = dataUrl || ''; }
+    else if (kind === 'tutor') { var t = tutor(ident); if (t) t.photo = dataUrl || ''; }
+    else if (kind === 'admin') { load().admin.photo = dataUrl || ''; }
+    save();
+  }
+  function initials(name) {
+    var p = String(name || '').trim().split(/\s+/);
+    return ((p[0] || '')[0] || '?').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
+  }
+
+  /* Take whatever the phone camera produced and cut it down to a square
+     thumbnail before it is ever stored. A 4MB photo becomes about 20KB,
+     which matters because the whole browser store is capped near 5MB.  */
+  function shrinkPhoto(file, done, fail) {
+    if (!file || !/^image\//.test(file.type)) { if (fail) fail('That file is not a picture.'); return; }
+    var reader = new FileReader();
+    reader.onerror = function () { if (fail) fail('That picture could not be read.'); };
+    reader.onload = function () {
+      var img = new Image();
+      img.onerror = function () { if (fail) fail('That picture could not be opened.'); };
+      img.onload = function () {
+        var SIDE = 320;
+        var side = Math.min(img.width, img.height);          /* centre square crop */
+        var sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+        var c = document.createElement('canvas');
+        c.width = SIDE; c.height = SIDE;
+        var ctx = c.getContext('2d');
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, SIDE, SIDE);
+        done(c.toDataURL('image/jpeg', 0.72));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   }
 
   /* ============================================================ MONEY */
@@ -614,7 +892,7 @@ var NZ = (function () {
 
     /* the tutor (you). Username tapuwa, PIN already set to 1234 so the demo
        opens straight away — change it on first real use. */
-    var tut = addTutor({ name: 'Tapuwa Sithole', username: 'tapuwa', email: 'tapuwasithole7@gmail.com', phone: '060 778 1905' });
+    var tut = addTutor({ name: 'Tapuwa Sithole', username: 'tapuwa', email: 'tapuwasithole7@gmail.com', phone: '060 778 1905', degree: 'PhD candidate, Nuclear Physics (UNISA)' });
     tut.pinHash = hash('1234');
 
     var a = addStudent({
@@ -663,6 +941,8 @@ var NZ = (function () {
     addMessage(a.id, 'student', 'Thank you sir. Can we also do the September past paper question 4?');
     addMessage(c.id, 'student', 'Sir, I have uploaded the assignment brief. Is 18:00 still fine tonight?');
 
+    addComplaint('student', b.id, 'student', 'Good day. The Saturday slot keeps clashing with my son\u2019s sport. Could we look at a different time?');
+
     db.demo = true;
     return db;
   }
@@ -681,11 +961,29 @@ var NZ = (function () {
     onChange: onChange, setActor: setActor,
 
     /* accounts + auth */
-    adminUser: adminUser, adminLogin: adminLogin, setAdmin: setAdmin,
+    adminUser: adminUser, adminLogin: adminLogin, setAdmin: setAdmin, adminPhone: adminPhone,
     tutors: tutors, tutor: tutor, tutorName: tutorName, tutorByUsername: tutorByUsername,
     addTutor: addTutor, updateTutor: updateTutor, setTutorActive: setTutorActive, removeTutor: removeTutor,
     tutorNeedsPin: tutorNeedsPin, tutorSetPin: tutorSetPin, tutorLogin: tutorLogin,
     studentLogin: studentLogin, studentByUsername: studentByUsername,
+    resetStudentPassword: resetStudentPassword, resetTutorPin: resetTutorPin,
+
+    /* notifications */
+    notify: notify, notices: notices, unreadNotices: unreadNotices,
+    markNoticeRead: markNoticeRead, markAllNoticesRead: markAllNoticesRead,
+    noticeDigest: noticeDigest, checkLessons: checkLessons,
+
+    /* complaints — the private line to the admin */
+    complaints: complaints, addComplaint: addComplaint,
+    unreadComplaints: unreadComplaints, markComplaintsRead: markComplaintsRead,
+    complaintParties: complaintParties,
+
+    /* admin oversight */
+    readThreadQuietly: readThreadQuietly, threadSummaries: threadSummaries,
+    teamsLessons: teamsLessons,
+
+    /* photos */
+    setPhoto: setPhoto, initials: initials, shrinkPhoto: shrinkPhoto,
 
     /* students */
     students: students, student: student, studentByCode: studentByCode,
