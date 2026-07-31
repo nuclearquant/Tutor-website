@@ -21,9 +21,9 @@
     <h1>Owner <span class="gate__accent">console</span></h1>
     <p>Sign in to oversee every tutor, student and lesson.</p>
     <label class="lbl" for="u">Username</label>
-    <input id="u" type="text" autocomplete="username" placeholder="admin" style="margin-bottom:.6rem">
+    <input id="u" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="admin" style="margin-bottom:.6rem">
     <label class="lbl" for="p">PIN</label>
-    <input id="p" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••">
+    <input id="p" type="password" inputmode="numeric" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="••••">
     <p class="gate__err" id="err"></p>
     <button class="btn btn--flame" id="go" style="width:100%;justify-content:center">Open the console</button>
     <p style="font-size:.78rem;color:var(--slate);margin:.9rem 0 0">First time in? Username <b>admin</b>, PIN <b>1234</b>. Change both under Setup.</p>
@@ -229,6 +229,11 @@
         </div>
         <p id="phoneMsg" style="font-size:.85rem;color:var(--accepted);min-height:1.2rem"></p>
       </div>
+      <div class="box"><h3>Signed-in devices</h3>
+        <p style="color:var(--slate);font-size:.88rem">The console opens on <b>three</b> devices at most — say your laptop, your phone and the office machine. Remove one to free a slot for a new one.</p>
+        <div id="devList"></div>
+      </div>
+
       <div class="box"><h3>Backup</h3>
         <p style="color:var(--slate);font-size:.88rem">The whole practice in one file. Do this weekly and before clearing browser data.</p>
         <div class="bar"><button class="btn btn--ghost" id="backup">Download a backup</button>
@@ -267,7 +272,16 @@
   $('go').addEventListener('click',tryIn);
   $('p').addEventListener('keydown',function(e){if(e.key==='Enter')tryIn();});
   $('u').addEventListener('keydown',function(e){if(e.key==='Enter')$('p').focus();});
-  function tryIn(){ if(NZ.adminLogin($('u').value||'admin',$('p').value)){ $('err').textContent=''; unlock(); } else { $('err').textContent='That username or PIN does not match.'; $('p').select(); } }
+  function tryIn(){
+    var r=NZ.adminLogin($('u').value||'admin',$('p').value);
+    if(r===true){ $('err').textContent=''; unlock(); return; }
+    if(r==='limit'){
+      $('err').innerHTML='Three devices are already signed in to this console. '+
+        'Open it on one of those and remove a device under Setup to free a slot.';
+      return;
+    }
+    $('err').textContent='That username or PIN does not match.'; $('p').select();
+  }
   $('lock').addEventListener('click',function(){ sessionStorage.removeItem('nz.admin'); if(timer)clearInterval(timer); location.reload(); });
 
   /* ---- tabs ---- */
@@ -737,10 +751,35 @@
     if(navigator.clipboard) navigator.clipboard.writeText(text).then(done,done); else done();
   });
 
+  /* ---- signed-in devices ---- */
+  function drawDevices(){
+    var list=NZ.adminDevices(), here=NZ.deviceId();
+    var slots=NZ.ADMIN_DEVICE_LIMIT;
+    var rows=list.map(function(d){
+      var isHere=d.id===here;
+      return '<div class="note-row'+(isHere?' is-new':'')+'">'+
+        '<span class="note-row__ico">'+(isHere?'\uD83D\uDCBB':'\uD83D\uDD10')+'</span>'+
+        '<span class="note-row__body"><span class="note-row__t">'+esc(d.label||'Unknown device')+
+          (isHere?' <span class="tag">this one</span>':'')+'</span>'+
+        '<span class="note-row__d">First used '+when(d.at)+' \u00b7 last seen '+when(d.seen||d.at)+'</span></span>'+
+        (isHere?'':'<button class="btn btn--sm btn--quiet" data-forget="'+d.id+'">Remove</button>')+
+        '</div>';
+    }).join('');
+    $('devList').innerHTML='<div class="notes">'+(rows||'<p style="color:var(--slate)">None recorded yet.</p>')+'</div>'+
+      '<p style="font-size:.82rem;color:var(--slate);margin:.7rem 0 0">'+
+      list.length+' of '+slots+' slots used.'+
+      (list.length>=slots?' <b>Full</b> \u2014 a new device cannot sign in until you remove one.':'')+'</p>';
+  }
+  $('devList').addEventListener('click',function(e){
+    var b=e.target.closest('[data-forget]'); if(!b) return;
+    if(!confirm('Remove that device? Whoever uses it will need to sign in again, and it will take a slot when they do.')) return;
+    NZ.forgetAdminDevice(b.dataset.forget); draw();
+  });
+
   /* ---- glue ---- */
   function draw(){
     fillTutorFilter(); drawOver(); drawNotes(); drawApps(); drawTutors(); drawStudents();
-    drawFaces(); drawWatch(); drawHelp(); drawTeams(); drawLog(); drawBell();
+    drawFaces(); drawWatch(); drawHelp(); drawTeams(); drawLog(); drawBell(); drawDevices();
     $('au').value=NZ.adminUser(); $('aph').value=NZ.adminPhone();
   }
   NZ.onChange(function(){ if(!$('app').hidden) draw(); });
