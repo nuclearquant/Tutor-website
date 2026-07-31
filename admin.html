@@ -43,6 +43,9 @@
       <span><b>NUCLEAR</b><span>-ZONE</span><small>Owner console</small></span>
     </a>
     <span class="top__spacer"></span>
+    <button class="btn btn--ghost btn--sm bell" id="bellBtn" style="color:#fff;border-color:rgba(255,255,255,.22)" title="Alerts">
+      Alerts <span class="bell__count" id="bellCount" hidden>0</span>
+    </button>
     <span class="who">Admin — <b>Tapuwa Sithole</b></span>
     <button class="btn btn--ghost btn--sm" id="lock" style="color:#fff;border-color:rgba(255,255,255,.22)">Lock</button>
   </div>
@@ -51,9 +54,14 @@
 <div class="tabs" role="tablist">
   <div class="wrap">
     <button class="tab" role="tab" aria-selected="true"  data-panel="p-over">Overview</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-notes">Alerts <span class="pip" id="notePip" hidden>0</span></button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-apps">Applications <span class="pip" id="appPip" hidden>0</span></button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-tutors">Tutors</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-students">Students</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-faces">Faces</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-watch">Messages</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-help">Complaints <span class="pip" id="helpPip" hidden>0</span></button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-teams">Teams</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-log">Activity</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-setup">Setup</button>
   </div>
@@ -71,14 +79,35 @@
     </div>
     <div class="grid2">
       <div class="box"><h3>Money across the practice</h3><div id="moneyBox"></div></div>
-      <div class="box"><h3>Latest activity</h3><div id="recentBox"></div></div>
+      <div class="box"><h3>Latest alerts</h3><div class="notes" id="recentNotes"></div></div>
     </div>
+  </section>
+
+  <!-- ALERTS -->
+  <section class="panel" id="p-notes" role="tabpanel">
+    <div class="head"><div><h2>Alerts</h2>
+      <p>Bookings, lessons starting and finishing, Teams links, complaints and account changes — newest first.</p></div>
+      <span class="head__spacer"></span>
+      <button class="btn btn--green" id="waNotes">Send new ones to my WhatsApp</button>
+      <button class="btn btn--ghost" id="readAll">Mark all read</button>
+    </div>
+    <div class="bar">
+      <div class="fld"><label for="nKind">Show</label><select id="nKind">
+        <option value="">Everything</option>
+        <option value="application">New bookings</option>
+        <option value="lesson">Lessons</option>
+        <option value="teams">Teams links</option>
+        <option value="complaint">Complaints</option>
+        <option value="account">Accounts</option>
+      </select></div>
+    </div>
+    <div class="notes" id="noteList"></div>
   </section>
 
   <!-- APPLICATIONS -->
   <section class="panel" id="p-apps" role="tabpanel">
     <div class="head"><div><h2>New applications</h2>
-      <p>People who booked on the website. Accepting one creates their login and lets you send it on WhatsApp and email.</p></div></div>
+      <p>Every booking made on the website lands here. Accepting one creates the login and lets you send it on WhatsApp and email.</p></div></div>
     <div id="slipHost"></div>
     <div id="appList"></div>
   </section>
@@ -86,15 +115,16 @@
   <!-- TUTORS -->
   <section class="panel" id="p-tutors" role="tabpanel">
     <div class="head"><div><h2>Tutors</h2>
-      <p>Register a tutor here and send them their sign-in link. They set their own PIN the first time they open it.</p></div>
+      <p>Only you can register or de-register a tutor. They set their own PIN the first time they sign in.</p></div>
       <span class="head__spacer"></span>
       <button class="btn btn--flame" id="addTutor">＋ Register a tutor</button>
       <button class="btn btn--ghost" id="expTutors">Export</button>
     </div>
-    <div class="sheet"><table>
-      <thead><tr><th style="min-width:160px">Name</th><th style="min-width:120px">Username</th><th style="min-width:180px">Email</th>
-        <th style="min-width:130px">Phone</th><th class="num">Students</th><th class="num">Owed to them</th>
-        <th style="min-width:110px">Status</th><th style="min-width:230px">Actions</th></tr></thead>
+    <div class="sheet"><table style="min-width:1220px">
+      <thead><tr><th style="min-width:190px">Name</th><th style="min-width:210px">Highest degree</th>
+        <th style="min-width:110px">Username</th><th style="min-width:170px">Email</th>
+        <th style="min-width:125px">Phone</th><th class="num">Students</th><th class="num">Owed</th>
+        <th style="min-width:110px">Status</th><th style="min-width:330px">Actions</th></tr></thead>
       <tbody id="tutorRows"></tbody>
     </table></div>
   </section>
@@ -102,8 +132,9 @@
   <!-- STUDENTS -->
   <section class="panel" id="p-students" role="tabpanel">
     <div class="head"><div><h2>All students</h2>
-      <p>Every student across every tutor. Suspend one and they can no longer sign in; reactivate to let them back.</p></div>
+      <p>Every student across every tutor. Only you can register one directly or remove one.</p></div>
       <span class="head__spacer"></span>
+      <button class="btn btn--flame" id="addStudent">＋ Register a student</button>
       <button class="btn btn--ghost" id="expStudents">Export</button>
     </div>
     <div class="bar">
@@ -112,11 +143,57 @@
         <option value="active">Active</option><option value="suspended">Suspended</option></select></div>
       <div class="fld"><label for="fFind">Find</label><input type="search" id="fFind" class="search" placeholder="Name or school"></div>
     </div>
-    <div class="sheet"><table style="min-width:1180px">
-      <thead><tr><th style="min-width:160px">Name</th><th style="min-width:120px">Level</th><th style="min-width:150px">Tutor</th>
-        <th style="min-width:120px">Username</th><th style="min-width:140px">Password</th><th class="num">Lessons</th>
-        <th class="num">Owing</th><th style="min-width:110px">Status</th><th style="min-width:250px">Actions</th></tr></thead>
+    <div class="sheet"><table style="min-width:1300px">
+      <thead><tr><th style="min-width:190px">Name</th><th style="min-width:110px">Level</th><th style="min-width:140px">Tutor</th>
+        <th style="min-width:110px">Username</th><th style="min-width:130px">Password</th><th class="num">Lessons</th>
+        <th class="num">Owing</th><th style="min-width:110px">Status</th><th style="min-width:360px">Actions</th></tr></thead>
       <tbody id="studentRows"></tbody>
+    </table></div>
+  </section>
+
+  <!-- FACES -->
+  <section class="panel" id="p-faces" role="tabpanel">
+    <div class="head"><div><h2>Faces</h2>
+      <p>A picture and a name tag for everyone. Tutors carry their highest degree under the name. Pictures are shrunk before they are saved.</p></div></div>
+    <h3 style="font-family:var(--display);margin:.2rem 0 .7rem">Tutors</h3>
+    <div class="people" id="tutorFaces"></div>
+    <h3 style="font-family:var(--display);margin:1.6rem 0 .7rem">Students</h3>
+    <div class="people" id="studentFaces"></div>
+  </section>
+
+  <!-- MESSAGE OVERSIGHT -->
+  <section class="panel" id="p-watch" role="tabpanel">
+    <div class="head"><div><h2>Tutor and student messages</h2>
+      <p>Every lesson conversation on the platform, read-only.</p></div></div>
+    <div class="note" style="margin-bottom:1rem">Opening a conversation here leaves no mark on it — the read counts and unread badges on the tutor's and student's own screens are untouched.</div>
+    <div class="threads">
+      <div class="threads__list" id="watchList"></div>
+      <div class="chat" id="watchChat"></div>
+    </div>
+  </section>
+
+  <!-- COMPLAINTS -->
+  <section class="panel" id="p-help" role="tabpanel">
+    <div class="head"><div><h2>Complaints and private messages</h2>
+      <p>The direct line from a tutor or student to you. Nobody else can see these.</p></div></div>
+    <div class="threads">
+      <div class="threads__list" id="helpList"></div>
+      <div class="chat" id="helpChat"></div>
+    </div>
+  </section>
+
+  <!-- TEAMS -->
+  <section class="panel" id="p-teams" role="tabpanel">
+    <div class="head"><div><h2>Teams meetings</h2>
+      <p>Every join link a tutor has created, newest first. You get an alert the moment one is added.</p></div>
+      <span class="head__spacer"></span>
+      <button class="btn btn--ghost" id="expTeams">Export</button>
+    </div>
+    <div class="sheet"><table style="min-width:1080px">
+      <thead><tr><th style="min-width:180px">Student</th><th style="min-width:140px">Tutor</th>
+        <th style="min-width:130px">Subject</th><th style="min-width:130px">Date</th><th style="min-width:110px">Time</th>
+        <th style="min-width:110px">Status</th><th style="min-width:240px">Join link</th></tr></thead>
+      <tbody id="teamRows"></tbody>
     </table></div>
   </section>
 
@@ -133,16 +210,24 @@
 
   <!-- SETUP -->
   <section class="panel" id="p-setup" role="tabpanel">
-    <div class="head"><div><h2>Setup</h2><p>Your login, backups, and the honest notes.</p></div></div>
+    <div class="head"><div><h2>Setup</h2><p>Your login, your WhatsApp number, backups, and the honest notes.</p></div></div>
     <div class="grid2">
       <div class="box"><h3>Admin login</h3>
         <p style="color:var(--slate);font-size:.88rem">Change the username and PIN only you use.</p>
         <div class="bar">
-          <div class="fld"><label for="au">Username</label><input id="au" type="text" style="width:150px"></div>
-          <div class="fld"><label for="ap">New PIN</label><input id="ap" type="text" inputmode="numeric" maxlength="8" style="width:120px"></div>
+          <div class="fld"><label for="au">Username</label><input id="au" type="text" style="width:140px"></div>
+          <div class="fld"><label for="ap">New PIN</label><input id="ap" type="text" inputmode="numeric" maxlength="8" style="width:110px"></div>
           <div class="fld"><label>&nbsp;</label><button class="btn btn--ghost" id="saveAdmin">Save</button></div>
         </div>
         <p id="adminMsg" style="font-size:.85rem;color:var(--accepted);min-height:1.2rem"></p>
+      </div>
+      <div class="box"><h3>Your WhatsApp number</h3>
+        <p style="color:var(--slate);font-size:.88rem">Where “Send new ones to my WhatsApp” delivers your alerts. Country code, no plus — <b>27</b> for South Africa.</p>
+        <div class="bar">
+          <div class="fld"><label for="aph">Number</label><input id="aph" type="tel" placeholder="27607781905" style="width:180px"></div>
+          <div class="fld"><label>&nbsp;</label><button class="btn btn--ghost" id="savePhone">Save</button></div>
+        </div>
+        <p id="phoneMsg" style="font-size:.85rem;color:var(--accepted);min-height:1.2rem"></p>
       </div>
       <div class="box"><h3>Backup</h3>
         <p style="color:var(--slate);font-size:.88rem">The whole practice in one file. Do this weekly and before clearing browser data.</p>
@@ -154,8 +239,8 @@
         <p style="color:var(--slate);font-size:.88rem">One tutor and four students came with the console so nothing was empty. Clear them once your real people are in.</p>
         <button class="btn btn--ghost" id="clearAll">Clear everything and start empty</button>
       </div>
-      <div class="box"><h3>How logins really work here</h3>
-        <div class="note"><b>Read this once.</b> Usernames, PINs and passwords are checked inside the browser, because this site has no server yet. That is enough to keep tutors and students out of each other's dashboards by accident, but a determined person could bypass it. Don't store anything truly sensitive until you move the data to Supabase (README-dashboards.md), which adds real accounts and server-side checks.</div>
+      <div class="box" style="grid-column:1/-1"><h3>How logins and oversight really work here</h3>
+        <div class="note"><b>Read this once.</b> Usernames, PINs and passwords are checked inside the browser, because this site has no server yet. That is enough to keep tutors and students out of each other's dashboards by accident, but a determined person could bypass it. Message oversight leaves no trace on their screens — but anyone who opens this console can read the same conversations, so the PIN on it is the only thing protecting them. Don't store anything truly sensitive until you move the data to Supabase (README-dashboards.md), which adds real accounts and server-side checks.</div>
       </div>
     </div>
   </section>
@@ -169,26 +254,50 @@
   'use strict';
   var $=function(i){return document.getElementById(i);};
   var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+  var timer=null;
 
   /* ---- login ---- */
-  function unlock(){ $('gate').style.display='none'; $('app').hidden=false; NZ.setActor('admin','Tapuwa'); sessionStorage.setItem('nz.admin','1'); draw(); }
+  function unlock(){
+    $('gate').style.display='none'; $('app').hidden=false;
+    NZ.setActor('admin','Tapuwa'); sessionStorage.setItem('nz.admin','1');
+    NZ.checkLessons(); draw();
+    /* keep watching for lessons that start or end while this stays open */
+    timer=setInterval(function(){ if(NZ.checkLessons()) draw(); else drawBell(); },60000);
+  }
   $('go').addEventListener('click',tryIn);
   $('p').addEventListener('keydown',function(e){if(e.key==='Enter')tryIn();});
+  $('u').addEventListener('keydown',function(e){if(e.key==='Enter')$('p').focus();});
   function tryIn(){ if(NZ.adminLogin($('u').value||'admin',$('p').value)){ $('err').textContent=''; unlock(); } else { $('err').textContent='That username or PIN does not match.'; $('p').select(); } }
-  $('lock').addEventListener('click',function(){ sessionStorage.removeItem('nz.admin'); location.reload(); });
+  $('lock').addEventListener('click',function(){ sessionStorage.removeItem('nz.admin'); if(timer)clearInterval(timer); location.reload(); });
 
   /* ---- tabs ---- */
   var tabs=document.querySelectorAll('.tab');
-  tabs.forEach(function(t){ t.addEventListener('click',function(){
-    tabs.forEach(function(x){x.setAttribute('aria-selected','false');});
-    t.setAttribute('aria-selected','true');
+  tabs.forEach(function(t){ t.addEventListener('click',function(){ show(t.dataset.panel); }); });
+  function show(panel){
+    tabs.forEach(function(x){x.setAttribute('aria-selected', x.dataset.panel===panel?'true':'false');});
     document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
-    $(t.dataset.panel).classList.add('on');
-  }); });
+    $(panel).classList.add('on');
+  }
+  $('bellBtn').addEventListener('click',function(){ show('p-notes'); drawNotes(); });
+
+  /* ================================================================ bits */
+  function money(n){return NZ.money(n);}
+  function when(iso){ var d=new Date(iso); return NZ.prettyDate(d.toISOString().slice(0,10))+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  function base(){ return location.href.replace(/[^/]*$/,''); }
+  function badge(status){ var lab=status.charAt(0).toUpperCase()+status.slice(1); return '<span class="badge badge--'+status+'"><i></i>'+lab+'</span>'; }
+  function waNum(p){ return String(p||'').replace(/\D/g,'').replace(/^0/,'27'); }
+  function card(k,v,s,cls){return '<div class="card '+(cls||'')+'"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>';}
+  function row(k,v){return '<div class="row" style="border-color:var(--line)"><span>'+k+'</span><b style="color:var(--flame)">'+v+'</b></div>';}
+
+  /* a face, or the person's initials when there is no picture yet */
+  function face(photo,name,cls){
+    var c='face '+(cls||'');
+    return photo ? '<img class="'+c+'" src="'+photo+'" alt="">'
+                 : '<span class="'+c+' face--empty">'+esc(NZ.initials(name))+'</span>';
+  }
+  var ICON={application:'\uD83D\uDCDD',lesson:'\uD83C\uDF93',teams:'\uD83C\uDFA5',complaint:'\u26A0\uFE0F',account:'\uD83D\uDD11'};
 
   /* ---- overview ---- */
-  function money(n){return NZ.money(n);}
-  function card(k,v,s,cls){return '<div class="card '+(cls||'')+'"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>';}
   function drawOver(){
     var studs=NZ.students().filter(function(s){return s.status!=='applicant';});
     var apps=NZ.applicants();
@@ -198,20 +307,49 @@
       card('Tutors',NZ.tutors().length,'registered',''),
       card('Students',studs.length,studs.filter(function(s){return s.active;}).length+' active',''),
       card('Applications',apps.length,apps.length?'waiting to be accepted':'none waiting',apps.length?'card--flame':''),
-      card('Lessons',NZ.lessons().length,t.hours.toFixed(1)+' hours','' ),
+      card('Lessons',NZ.lessons().length,t.hours.toFixed(1)+' hours',''),
       card('Received',money(t.paid),'all time','card--green'),
       card('Outstanding',money(t.balance),'still to come in',t.balance>0?'card--flame':'card--green')
     ].join('');
     $('moneyBox').innerHTML='<div class="slip" style="background:#fff;color:var(--ink)">'+
       row('Charged in total',money(t.fee))+row('Paid',money(t.paid))+row('Outstanding',money(t.balance))+'</div>';
-    var recent=NZ.activity().slice(0,8).map(function(a){
-      return '<div style="display:flex;justify-content:space-between;gap:1rem;padding:.3rem 0;border-bottom:1px solid var(--line);font-size:.85rem">'+
-        '<span><b>'+esc(a.who)+'</b> · '+esc(a.action)+(a.detail?' — '+esc(a.detail):'')+'</span>'+
-        '<span class="mono" style="color:var(--slate);white-space:nowrap">'+when(a.at)+'</span></div>';
-    }).join('') || '<p style="color:var(--slate)">Nothing yet.</p>';
-    $('recentBox').innerHTML=recent;
+    $('recentNotes').innerHTML=NZ.notices().slice(0,6).map(noteRow).join('')
+      || '<p style="color:var(--slate)">Nothing yet.</p>';
   }
-  function row(k,v){return '<div class="row" style="border-color:var(--line)"><span>'+k+'</span><b style="color:var(--flame)">'+v+'</b></div>';}
+
+  /* ---- alerts ---- */
+  function noteRow(n){
+    return '<div class="note-row '+(n.read?'':'is-new')+(n.urgent&&!n.read?' is-urgent':'')+'" data-note="'+n.id+'">'+
+      '<span class="note-row__ico">'+(ICON[n.kind]||'\u2022')+'</span>'+
+      '<span class="note-row__body"><span class="note-row__t">'+esc(n.title)+'</span>'+
+      (n.detail?'<span class="note-row__d">'+esc(n.detail)+'</span>':'')+'</span>'+
+      '<span class="note-row__when">'+when(n.at)+'</span></div>';
+  }
+  function drawBell(){
+    var n=NZ.unreadNotices();
+    $('bellCount').hidden=n===0; $('bellCount').textContent=n;
+    $('notePip').hidden=n===0; $('notePip').textContent=n;
+    var hc=NZ.complaintParties().reduce(function(a,p){return a+NZ.unreadComplaints('admin',p.partyType,p.partyId);},0);
+    $('helpPip').hidden=hc===0; $('helpPip').textContent=hc;
+  }
+  function drawNotes(){
+    var kind=$('nKind').value;
+    var list=NZ.notices(kind||null);
+    $('noteList').innerHTML=list.length?list.map(noteRow).join('')
+      :'<div class="empty"><h3>Nothing here</h3><p>Alerts appear as bookings, lessons and messages come in.</p></div>';
+    drawBell();
+  }
+  $('nKind').addEventListener('change',drawNotes);
+  $('noteList').addEventListener('click',function(e){
+    var r=e.target.closest('[data-note]'); if(!r) return;
+    NZ.markNoticeRead(r.dataset.note); drawNotes();
+  });
+  $('readAll').addEventListener('click',function(){ NZ.markAllNoticesRead(); drawNotes(); });
+  $('waNotes').addEventListener('click',function(){
+    var num=waNum(NZ.adminPhone());
+    if(!num){ alert('Add your WhatsApp number under Setup first, then this button will send your alerts straight to you.'); show('p-setup'); return; }
+    window.open('https://wa.me/'+num+'?text='+encodeURIComponent(NZ.noticeDigest(true)),'_blank','noopener');
+  });
 
   /* ---- applications ---- */
   function drawApps(){
@@ -222,9 +360,9 @@
       return '<div class="box" data-id="'+s.id+'">'+
         '<div style="display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;align-items:flex-start">'+
         '<div><h3>'+esc((s.firstName+' '+s.surname).trim())+' <span class="badge badge--applicant"><i></i>Applicant</span></h3>'+
-        '<p style="color:var(--slate);font-size:.88rem;margin:.35rem 0 0">'+esc(s.role)+' · '+esc(s.level||'level not set')+' · '+esc((s.subjects||[]).join(', ')||'no subjects')+'<br>'+
-        esc(s.phone||'no phone')+' · '+esc(s.email||'no email')+(s.school?' · '+esc(s.school):'')+(s.when?'<br>Prefers: '+esc(s.when):'')+
-        (s.notes?'<br><em>“'+esc(s.notes)+'”</em>':'')+'</p></div>'+
+        '<p style="color:var(--slate);font-size:.88rem;margin:.35rem 0 0">'+esc(s.role)+' \u00b7 '+esc(s.level||'level not set')+' \u00b7 '+esc((s.subjects||[]).join(', ')||'no subjects')+'<br>'+
+        esc(s.phone||'no phone')+' \u00b7 '+esc(s.email||'no email')+(s.school?' \u00b7 '+esc(s.school):'')+(s.when?'<br>Prefers: '+esc(s.when):'')+
+        (s.notes?'<br><em>\u201c'+esc(s.notes)+'\u201d</em>':'')+'</p></div>'+
         '<div class="fld"><label>Assign to tutor</label><select class="asg">'+tutorOpts+'</select></div></div>'+
         '<div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">'+
         '<button class="btn btn--green btn--sm" data-act="accept">Accept &amp; create login</button>'+
@@ -235,21 +373,20 @@
     var b=e.target.closest('[data-act]'); if(!b) return;
     var wrap=b.closest('[data-id]'), sid=wrap.dataset.id;
     if(b.dataset.act==='reject'){ if(confirm('Decline and remove this application?')){ NZ.removeStudent(sid); draw(); } return; }
-    var tutorId=wrap.querySelector('.asg') ? wrap.querySelector('.asg').value : null;
+    var sel=wrap.querySelector('.asg');
+    var tutorId=sel?sel.value:null;
     if(!tutorId){ alert('Register a tutor first (Tutors tab), then accept.'); return; }
     var cred=NZ.acceptStudent(sid,tutorId);
-    /* into the persistent host — the applications list redraws and would
-       otherwise wipe an inline slip the moment the student is accepted */
     $('slipHost').innerHTML=slip(sid,cred)+'<button class="btn btn--quiet btn--sm" data-dismiss="1" style="margin:-.4rem 0 1rem">Done</button>';
   });
   $('slipHost').addEventListener('click',function(e){ if(e.target.dataset.dismiss) $('slipHost').innerHTML=''; });
 
-  function slip(sid,cred){
+  function slip(sid,cred,heading){
     var s=NZ.student(sid);
     var msg=NZ.credentialsMessage(sid);
-    var num=(s.phone||'').replace(/\D/g,'').replace(/^0/,'27');
+    var num=waNum(s.phone);
     var sub='Your NUCLEAR-ZONE dashboard login';
-    return '<div class="slip"><h4>Login created — send it to '+esc(s.firstName)+'</h4>'+
+    return '<div class="slip"><h4>'+esc(heading||('Login created \u2014 send it to '+s.firstName))+'</h4>'+
       '<div class="row"><span>Username</span><b>'+esc(cred.username)+'</b></div>'+
       '<div class="row"><span>Password</span><b>'+esc(cred.password)+'</b></div>'+
       '<div class="acts">'+
@@ -262,45 +399,58 @@
   /* ---- tutors ---- */
   function drawTutors(){
     var tb=$('tutorRows'), ts=NZ.tutors();
-    if(!ts.length){ tb.innerHTML='<tr><td colspan="8"><div class="empty"><h3>No tutors yet</h3><p>Register your first tutor to start assigning students.</p></div></td></tr>'; return; }
+    if(!ts.length){ tb.innerHTML='<tr><td colspan="9"><div class="empty"><h3>No tutors yet</h3><p>Register your first tutor to start assigning students.</p></div></td></tr>'; return; }
     tb.innerHTML=ts.map(function(t){
       var studs=NZ.studentsByTutor(t.id);
       var owed=NZ.totals(NZ.lessonsByTutor(t.id)).balance;
-      var link=base()+'tutor.html';
       return '<tr data-id="'+t.id+'">'+
-        '<td class="pad">'+esc(t.name)+'</td>'+
+        '<td class="pad"><span class="namecell">'+face(t.photo,t.name)+'<b>'+esc(t.name)+'</b></span></td>'+
+        '<td><input class="cell" data-f="degree" value="'+esc(t.degree)+'" placeholder="e.g. BSc Hons Physics"></td>'+
         '<td class="pad"><span class="code">'+esc(t.username)+'</span></td>'+
-        '<td class="pad">'+esc(t.email||'—')+'</td>'+
-        '<td class="pad">'+esc(t.phone||'—')+'</td>'+
+        '<td><input class="cell" data-f="email" value="'+esc(t.email)+'"></td>'+
+        '<td><input class="cell" data-f="phone" value="'+esc(t.phone)+'"></td>'+
         '<td class="num">'+studs.length+'</td>'+
         '<td class="num">'+money(owed)+'</td>'+
         '<td class="pad">'+badge(t.active?'active':'suspended')+(t.pinHash?'':' <span class="tag">no PIN yet</span>')+'</td>'+
         '<td class="pad" style="white-space:nowrap">'+
           '<button class="btn btn--sm btn--quiet" data-act="wa">Send link</button> '+
+          '<button class="btn btn--sm btn--quiet" data-act="reset">Reset PIN</button> '+
           '<button class="btn btn--sm btn--quiet" data-act="'+(t.active?'suspend':'activate')+'">'+(t.active?'Suspend':'Activate')+'</button> '+
-          '<button class="rowdel" data-act="del" aria-label="Remove tutor">✕</button></td></tr>';
+          '<button class="rowdel" data-act="del" aria-label="De-register tutor">\u2715</button></td></tr>';
     }).join('');
   }
+  $('tutorRows').addEventListener('change',function(e){
+    var el=e.target, f=el.dataset.f; if(!f) return;
+    var patch={}; patch[f]=el.value; NZ.updateTutor(el.closest('tr').dataset.id,patch); draw();
+  });
   $('tutorRows').addEventListener('click',function(e){
     var b=e.target.closest('[data-act]'); if(!b) return;
     var id=b.closest('tr').dataset.id, t=NZ.tutor(id);
     if(b.dataset.act==='suspend') NZ.setTutorActive(id,false);
     if(b.dataset.act==='activate') NZ.setTutorActive(id,true);
-    if(b.dataset.act==='del'){ if(confirm('Remove '+t.name+'? Their students become unassigned.')) NZ.removeTutor(id); }
+    if(b.dataset.act==='del'){ if(confirm('De-register '+t.name+'? Their students become unassigned.')) NZ.removeTutor(id); }
+    if(b.dataset.act==='reset'){
+      if(!confirm('Clear '+t.name+"'s PIN? They will choose a new one next time they sign in.")) return;
+      NZ.resetTutorPin(id);
+      var m='Hi '+t.name+' \u2014 your NUCLEAR-ZONE PIN has been cleared.\n\nOpen: '+base()+'tutor.html\nUsername: '+t.username+'\n\nChoose a new PIN when you sign in.';
+      if(confirm('PIN cleared. Send '+t.name+' the instructions on WhatsApp now?'))
+        window.open('https://wa.me/'+waNum(t.phone)+'?text='+encodeURIComponent(m),'_blank','noopener');
+      draw(); return;
+    }
     if(b.dataset.act==='wa'){
-      var msg='Hi '+t.name+' — here is your NUCLEAR-ZONE tutor sign-in.\n\nOpen: '+base()+'tutor.html\nUsername: '+t.username+'\n\nSet your own PIN the first time you sign in.';
-      var num=(t.phone||'').replace(/\D/g,'').replace(/^0/,'27');
-      window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank','noopener'); return;
+      var msg='Hi '+t.name+' \u2014 here is your NUCLEAR-ZONE tutor sign-in.\n\nOpen: '+base()+'tutor.html\nUsername: '+t.username+'\n\nSet your own PIN the first time you sign in.';
+      window.open('https://wa.me/'+waNum(t.phone)+'?text='+encodeURIComponent(msg),'_blank','noopener'); return;
     }
     draw();
   });
   $('addTutor').addEventListener('click',function(){
     var name=prompt('Tutor full name?'); if(!name) return;
+    var degree=prompt('Highest degree achieved? (shown under their name)')||'';
     var email=prompt('Email? (optional)')||'';
     var phone=prompt('WhatsApp number? (optional)')||'';
-    var t=NZ.addTutor({name:name,email:email,phone:phone});
+    var t=NZ.addTutor({name:name,degree:degree,email:email,phone:phone});
     draw();
-    alert(name+' registered.\nUsername: '+t.username+'\nThey set their PIN on first sign-in.');
+    alert(name+' registered.\nUsername: '+t.username+'\nThey set their PIN on first sign-in.\n\nAdd their photo under the Faces tab.');
   });
 
   /* ---- students ---- */
@@ -309,31 +459,35 @@
     $(id).addEventListener('input',function(){SF[k]=$(id).value;drawStudents();});});
   function fillTutorFilter(){ var sel=$('fTutor'),keep=sel.value; sel.innerHTML='<option value="">All tutors</option><option value="__none">Unassigned</option>';
     NZ.tutors().forEach(function(t){var o=document.createElement('option');o.value=t.id;o.textContent=t.name;sel.appendChild(o);}); sel.value=keep; }
-  function drawStudents(){
-    var tb=$('studentRows');
-    var list=NZ.students().filter(function(s){return s.status!=='applicant';}).filter(function(s){
+  function visibleStudents(){
+    return NZ.students().filter(function(s){return s.status!=='applicant';}).filter(function(s){
       if(SF.tutor==='__none' && s.tutorId) return false;
       if(SF.tutor && SF.tutor!=='__none' && s.tutorId!==SF.tutor) return false;
       if(SF.status && s.status!==SF.status) return false;
       if(SF.q){var h=((s.firstName+' '+s.surname)+' '+(s.school||'')).toLowerCase(); if(h.indexOf(SF.q.toLowerCase())===-1) return false;}
       return true;
     });
+  }
+  function drawStudents(){
+    var tb=$('studentRows'), list=visibleStudents();
     if(!list.length){ tb.innerHTML='<tr><td colspan="9"><div class="empty"><h3>No students match</h3><p>Clear the filters, or accept an application.</p></div></td></tr>'; return; }
     tb.innerHTML=list.map(function(s){
       var owing=NZ.totals(NZ.lessons(s.id)).balance;
+      var nm=(s.firstName+' '+s.surname).trim();
       return '<tr data-id="'+s.id+'">'+
-        '<td class="pad">'+esc((s.firstName+' '+s.surname).trim())+'</td>'+
-        '<td class="pad"><span class="tag">'+esc(s.level||'—')+'</span></td>'+
+        '<td class="pad"><span class="namecell">'+face(s.photo,nm)+'<b>'+esc(nm)+'</b></span></td>'+
+        '<td class="pad"><span class="tag">'+esc(s.level||'\u2014')+'</span></td>'+
         '<td class="pad">'+esc(NZ.tutorName(s.tutorId))+'</td>'+
-        '<td class="pad"><span class="code">'+esc(s.username||'—')+'</span></td>'+
-        '<td class="pad"><span class="mono" style="font-size:.82rem">'+esc(s.password||'—')+'</span></td>'+
+        '<td class="pad"><span class="code">'+esc(s.username||'\u2014')+'</span></td>'+
+        '<td class="pad"><span class="mono" style="font-size:.82rem">'+esc(s.password||'\u2014')+'</span></td>'+
         '<td class="num">'+NZ.lessons(s.id).length+'</td>'+
         '<td class="num '+(owing>0?'owing':'settled')+'">'+money(owing)+'</td>'+
         '<td class="pad">'+badge(s.status)+'</td>'+
         '<td class="pad" style="white-space:nowrap">'+
           '<button class="btn btn--sm btn--quiet" data-act="creds">Resend login</button> '+
+          '<button class="btn btn--sm btn--quiet" data-act="reset">Reset password</button> '+
           '<button class="btn btn--sm btn--quiet" data-act="'+(s.active?'suspend':'activate')+'">'+(s.active?'Suspend':'Activate')+'</button> '+
-          '<button class="rowdel" data-act="del" aria-label="Remove student">✕</button></td></tr>';
+          '<button class="rowdel" data-act="del" aria-label="De-register student">\u2715</button></td></tr>';
     }).join('');
   }
   $('studentRows').addEventListener('click',function(e){
@@ -341,13 +495,174 @@
     var id=b.closest('tr').dataset.id, s=NZ.student(id);
     if(b.dataset.act==='suspend') NZ.setStudentActive(id,false);
     if(b.dataset.act==='activate') NZ.setStudentActive(id,true);
-    if(b.dataset.act==='del'){ if(confirm('Remove '+NZ.studentName(id)+' and all their lessons and messages?')) NZ.removeStudent(id); }
+    if(b.dataset.act==='del'){ if(confirm('De-register '+NZ.studentName(id)+' and remove all their lessons and messages?')) NZ.removeStudent(id); }
+    if(b.dataset.act==='reset'){
+      if(!confirm('Give '+NZ.studentName(id)+' a brand new password?')) return;
+      var cred=NZ.resetStudentPassword(id);
+      $('slipHost').innerHTML=slip(id,cred,'New password for '+s.firstName)+'<button class="btn btn--quiet btn--sm" data-dismiss="1" style="margin:-.4rem 0 1rem">Done</button>';
+      show('p-apps');
+      draw(); return;
+    }
     if(b.dataset.act==='creds'){
       if(!s.username){ alert('This student has no login yet.'); return; }
-      var msg=NZ.credentialsMessage(id), num=(s.phone||'').replace(/\D/g,'').replace(/^0/,'27');
-      window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg),'_blank','noopener'); return;
+      window.open('https://wa.me/'+waNum(s.phone)+'?text='+encodeURIComponent(NZ.credentialsMessage(id)),'_blank','noopener'); return;
     }
     draw();
+  });
+  $('addStudent').addEventListener('click',function(){
+    var ts=NZ.tutors().filter(function(t){return t.active;});
+    if(!ts.length){ alert('Register a tutor first \u2014 a student has to be assigned to one.'); show('p-tutors'); return; }
+    var first=prompt('Student first name?'); if(!first) return;
+    var last=prompt('Surname?')||'';
+    var level=prompt('Level? (e.g. Grade 11)')||'';
+    var phone=prompt('WhatsApp number? (optional)')||'';
+    var email=prompt('Email? (optional)')||'';
+    var names=ts.map(function(t,i){return (i+1)+'. '+t.name;}).join('\n');
+    var pick=prompt('Assign to which tutor?\n\n'+names,'1');
+    var t=ts[(parseInt(pick,10)||1)-1]||ts[0];
+    var s=NZ.addStudent({firstName:first,surname:last,level:level,phone:phone,email:email,role:'Learner',tutorId:t.id});
+    var cred=NZ.acceptStudent(s.id,t.id);
+    draw();
+    $('slipHost').innerHTML=slip(s.id,cred)+'<button class="btn btn--quiet btn--sm" data-dismiss="1" style="margin:-.4rem 0 1rem">Done</button>';
+    show('p-apps');
+  });
+
+  /* ---- faces ---- */
+  function personCard(kind,o){
+    var nm = kind==='tutor' ? o.name : (o.firstName+' '+o.surname).trim();
+    var sub = kind==='tutor' ? 'Tutor' : (o.level||'Student');
+    var pic = o.photo
+      ? '<img class="person__pic" src="'+o.photo+'" alt="'+esc(nm)+'">'
+      : '<span class="person__pic person__pic--empty">'+esc(NZ.initials(nm))+'</span>';
+    return '<div class="person person--'+kind+'" data-kind="'+kind+'" data-id="'+o.id+'">'+
+      pic+
+      '<div class="person__tag">'+
+        '<div class="person__name">'+esc(nm)+'</div>'+
+        '<div class="person__sub">'+esc(sub)+'</div>'+
+        (kind==='tutor' ? '<div class="person__degree">'+esc(o.degree||'Degree not set')+'</div>' : '')+
+      '</div>'+
+      '<div class="person__acts">'+
+        '<label class="btn btn--sm btn--quiet pickpic">'+(o.photo?'Change':'Add photo')+
+          '<input type="file" accept="image/*" data-pic="'+kind+':'+o.id+'"></label>'+
+        (o.photo?'<button class="btn btn--sm btn--quiet" data-clearpic="'+kind+':'+o.id+'">Remove</button>':'')+
+      '</div></div>';
+  }
+  function drawFaces(){
+    $('tutorFaces').innerHTML=NZ.tutors().map(function(t){return personCard('tutor',t);}).join('')
+      || '<p style="color:var(--slate)">No tutors yet.</p>';
+    $('studentFaces').innerHTML=NZ.students().filter(function(s){return s.status!=='applicant';})
+      .map(function(s){return personCard('student',s);}).join('')
+      || '<p style="color:var(--slate)">No students yet.</p>';
+  }
+  document.addEventListener('change',function(e){
+    var inp=e.target.closest('[data-pic]'); if(!inp) return;
+    var parts=inp.dataset.pic.split(':'), f=inp.files[0]; if(!f) return;
+    NZ.shrinkPhoto(f,function(dataUrl){ NZ.setPhoto(parts[0],parts[1],dataUrl); draw(); },
+                     function(msg){ alert(msg); });
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('[data-clearpic]'); if(!b) return;
+    var parts=b.dataset.clearpic.split(':');
+    NZ.setPhoto(parts[0],parts[1],''); draw();
+  });
+
+  /* ---- message oversight (silent) ---- */
+  var watching=null;
+  function drawWatch(){
+    var list=NZ.threadSummaries(), box=$('watchList');
+    if(!list.length){ box.innerHTML='<div class="empty"><p>No conversations yet.</p></div>'; $('watchChat').innerHTML=''; return; }
+    box.innerHTML=list.map(function(t){
+      var s=NZ.student(t.studentId);
+      return '<button class="thread'+(watching===t.studentId?' on':'')+'" data-sid="'+t.studentId+'">'+
+        '<span class="namecell">'+face(s?s.photo:'',t.name,'face--sm')+
+        '<span><b>'+esc(t.name)+'</b><span class="thread__last">with '+esc(t.tutor)+' \u00b7 '+t.count+' message'+(t.count===1?'':'s')+'</span></span></span></button>';
+    }).join('');
+    if(!watching || !NZ.student(watching)) watching=list[0].studentId;
+    var msgs=NZ.readThreadQuietly(watching);   /* never marks anything read */
+    var s=NZ.student(watching);
+    $('watchChat').innerHTML='<div class="chat__head">'+
+        '<span class="namecell">'+face(s?s.photo:'',NZ.studentName(watching))+
+        '<span><b>'+esc(NZ.studentName(watching))+'</b><br><span style="font-size:.8rem;color:var(--slate)">with '+esc(NZ.tutorName(s?s.tutorId:null))+'</span></span></span></div>'+
+      '<div class="chat__log">'+msgs.map(function(m){
+        return '<div class="bubble bubble--'+(m.from==='tutor'?'me':'them')+'">'+esc(m.text)+
+          '<small>'+(m.from==='tutor'?'Tutor':'Student')+' \u00b7 '+when(m.at)+'</small></div>';
+      }).join('')+'</div>'+
+      '<div class="note" style="margin:.7rem;font-size:.82rem">Read-only. Reply through the tutor, or use Complaints to write privately.</div>';
+  }
+  $('watchList').addEventListener('click',function(e){
+    var b=e.target.closest('[data-sid]'); if(!b) return;
+    watching=b.dataset.sid; drawWatch();
+  });
+
+  /* ---- complaints ---- */
+  var helping=null;
+  function partyName(pt,pid){ return pt==='tutor'?NZ.tutorName(pid):NZ.studentName(pid); }
+  function partyPhoto(pt,pid){ var o=pt==='tutor'?NZ.tutor(pid):NZ.student(pid); return o?o.photo:''; }
+  function drawHelp(){
+    var parties=NZ.complaintParties(), box=$('helpList');
+    if(!parties.length){ box.innerHTML='<div class="empty"><p>Nobody has written in yet.</p></div>'; $('helpChat').innerHTML=''; return; }
+    box.innerHTML=parties.map(function(p){
+      var key=p.partyType+':'+p.partyId;
+      var un=NZ.unreadComplaints('admin',p.partyType,p.partyId);
+      var msgs=NZ.complaints(p.partyType,p.partyId);
+      var last=msgs[msgs.length-1];
+      return '<button class="thread'+(helping===key?' on':'')+'" data-key="'+key+'">'+
+        '<span class="namecell">'+face(partyPhoto(p.partyType,p.partyId),partyName(p.partyType,p.partyId),'face--sm')+
+        '<span><b>'+esc(partyName(p.partyType,p.partyId))+'</b> <span class="tag">'+esc(p.partyType)+'</span>'+
+        '<span class="thread__last">'+esc((last?last.text:'').slice(0,52))+'</span></span></span>'+
+        (un?'<span class="pip">'+un+'</span>':'')+'</button>';
+    }).join('');
+    var valid=parties.some(function(p){return helping===p.partyType+':'+p.partyId;});
+    if(!valid) helping=parties[0].partyType+':'+parties[0].partyId;
+    var k=helping.split(':'), pt=k[0], pid=k[1];
+    /* only counts as read once this tab is actually on screen */
+    if($('p-help').classList.contains('on')) NZ.markComplaintsRead('admin',pt,pid);
+    var msgs=NZ.complaints(pt,pid);
+    $('helpChat').innerHTML='<div class="chat__head"><span class="namecell">'+
+        face(partyPhoto(pt,pid),partyName(pt,pid))+'<b>'+esc(partyName(pt,pid))+'</b></span></div>'+
+      '<div class="chat__log">'+msgs.map(function(c){
+        return '<div class="bubble bubble--'+(c.from==='admin'?'me':'them')+'">'+esc(c.text)+
+          '<small>'+(c.from==='admin'?'You':esc(partyName(pt,pid)))+' \u00b7 '+when(c.at)+'</small></div>';
+      }).join('')+'</div>'+
+      '<div class="chat__new"><textarea id="helpText" rows="2" placeholder="Write back\u2026"></textarea>'+
+      '<button class="btn btn--flame" id="helpSend">Send</button></div>';
+    var send=function(){
+      var t=$('helpText').value;
+      if(!t.trim()) return;
+      NZ.addComplaint(pt,pid,'admin',t);
+      drawHelp(); drawBell();
+    };
+    $('helpSend').addEventListener('click',send);
+    $('helpText').addEventListener('keydown',function(e){ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') send(); });
+  }
+  $('helpList').addEventListener('click',function(e){
+    var b=e.target.closest('[data-key]'); if(!b) return;
+    helping=b.dataset.key; drawHelp(); drawBell();
+  });
+
+  /* ---- teams ---- */
+  function drawTeams(){
+    var tb=$('teamRows'), list=NZ.teamsLessons();
+    if(!list.length){ tb.innerHTML='<tr><td colspan="7"><div class="empty"><h3>No Teams links yet</h3><p>When a tutor pastes a join link into a lesson it appears here, and you get an alert.</p></div></td></tr>'; return; }
+    tb.innerHTML=list.map(function(l){
+      var s=NZ.student(l.studentId);
+      return '<tr>'+
+        '<td class="pad"><span class="namecell">'+face(s?s.photo:'',NZ.studentName(l.studentId),'face--sm')+esc(NZ.studentName(l.studentId))+'</span></td>'+
+        '<td class="pad">'+esc(NZ.tutorName(s?s.tutorId:null))+'</td>'+
+        '<td class="pad">'+esc(l.subject)+'</td>'+
+        '<td class="pad">'+NZ.prettyDate(l.date)+'</td>'+
+        '<td class="pad mono">'+esc(l.start)+'\u2013'+esc(l.end)+'</td>'+
+        '<td class="pad"><span class="dot" style="background:'+NZ.STATUS[l.status].dot+'"></span> '+NZ.STATUS[l.status].label+'</td>'+
+        '<td class="pad" style="white-space:nowrap">'+
+          '<a class="btn btn--sm btn--beam" href="'+esc(l.teamsUrl)+'" target="_blank" rel="noopener">Join</a> '+
+          '<button class="btn btn--sm btn--quiet" data-copy="'+encodeURIComponent(l.teamsUrl)+'">Copy link</button></td></tr>';
+    }).join('');
+  }
+  $('expTeams').addEventListener('click',function(){
+    var rows=[['Student','Tutor','Subject','Date','From','To','Status','Teams link']];
+    NZ.teamsLessons().forEach(function(l){ var s=NZ.student(l.studentId);
+      rows.push([NZ.studentName(l.studentId),NZ.tutorName(s?s.tutorId:null),l.subject,l.date,l.start,l.end,NZ.STATUS[l.status].label,l.teamsUrl]); });
+    NZ.download('nuclear-zone-teams-'+NZ.today()+'.csv',NZ.csv(rows),'text/csv');
   });
 
   /* ---- activity ---- */
@@ -365,9 +680,13 @@
   $('saveAdmin').addEventListener('click',function(){
     var u=$('au').value.trim(), p=$('ap').value.trim();
     if(p && p.length<4){ $('adminMsg').style.color='#C62828'; $('adminMsg').textContent='PIN needs at least four digits.'; return; }
-    NZ.setAdmin(u||null,p||null);
+    NZ.setAdmin(u||null,p||null,null);
     $('adminMsg').style.color='var(--accepted)'; $('adminMsg').textContent='Saved.'; $('ap').value='';
     if(u) $('au').value=NZ.adminUser();
+  });
+  $('savePhone').addEventListener('click',function(){
+    NZ.setAdmin(null,null,$('aph').value.trim());
+    $('phoneMsg').style.color='var(--accepted)'; $('phoneMsg').textContent='Saved. Alerts will go to that number.';
   });
   $('backup').addEventListener('click',function(){ NZ.download('nuclear-zone-backup-'+NZ.today()+'.json', localStorage.getItem('nuclearzone.v1')||'{}','application/json'); });
   $('restore').addEventListener('change',function(e){
@@ -379,8 +698,8 @@
 
   /* ---- exports ---- */
   $('expTutors').addEventListener('click',function(){
-    var rows=[['Name','Username','Email','Phone','Students','Owed to them (R)','Status','Registered']];
-    NZ.tutors().forEach(function(t){ rows.push([t.name,t.username,t.email,t.phone,NZ.studentsByTutor(t.id).length,NZ.totals(NZ.lessonsByTutor(t.id)).balance.toFixed(2),t.active?'Active':'Suspended',t.joined]); });
+    var rows=[['Name','Highest degree','Username','Email','Phone','Students','Owed to them (R)','Status','Registered']];
+    NZ.tutors().forEach(function(t){ rows.push([t.name,t.degree,t.username,t.email,t.phone,NZ.studentsByTutor(t.id).length,NZ.totals(NZ.lessonsByTutor(t.id)).balance.toFixed(2),t.active?'Active':'Suspended',t.joined]); });
     NZ.download('nuclear-zone-tutors-'+NZ.today()+'.csv',NZ.csv(rows),'text/csv');
   });
   $('expStudents').addEventListener('click',function(){ NZ.download('nuclear-zone-students-'+NZ.today()+'.csv',NZ.csv(studentCsv()),'text/csv'); });
@@ -391,13 +710,16 @@
   });
   $('expAll').addEventListener('click',function(){
     NZ.download('nuclear-zone-students-'+NZ.today()+'.csv',NZ.csv(studentCsv()),'text/csv');
-    var lrows=[['Tutor','Student','Level','Subject','Topic','Date','From','To','Hours','To be paid (R)','Paid (R)','Balance (R)','Status']];
+    var lrows=[['Tutor','Student','Level','Subject','Topic','Date','From','To','Hours','To be paid (R)','Paid (R)','Balance (R)','Status','Teams link']];
     NZ.lessons().forEach(function(l){ var s=NZ.student(l.studentId);
-      lrows.push([s?NZ.tutorName(s.tutorId):'',NZ.studentName(l.studentId),s?s.level:'',l.subject,l.topic,l.date,l.start,l.end,NZ.hours(l.start,l.end).toFixed(2),Number(l.fee||0).toFixed(2),Number(l.paid||0).toFixed(2),NZ.balance(l).toFixed(2),NZ.STATUS[l.status].label]); });
+      lrows.push([s?NZ.tutorName(s.tutorId):'',NZ.studentName(l.studentId),s?s.level:'',l.subject,l.topic,l.date,l.start,l.end,NZ.hours(l.start,l.end).toFixed(2),Number(l.fee||0).toFixed(2),Number(l.paid||0).toFixed(2),NZ.balance(l).toFixed(2),NZ.STATUS[l.status].label,l.teamsUrl||'']); });
     setTimeout(function(){ NZ.download('nuclear-zone-lessons-'+NZ.today()+'.csv',NZ.csv(lrows),'text/csv'); },250);
     var arows=[['When','Who','Action','Detail']];
     NZ.activity().forEach(function(a){ arows.push([a.at.replace('T',' ').slice(0,16),a.who,a.action,a.detail]); });
     setTimeout(function(){ NZ.download('nuclear-zone-activity-'+NZ.today()+'.csv',NZ.csv(arows),'text/csv'); },500);
+    var nrows=[['When','Kind','Alert','Detail']];
+    NZ.notices().forEach(function(n){ nrows.push([n.at.replace('T',' ').slice(0,16),n.kind,n.title,n.detail]); });
+    setTimeout(function(){ NZ.download('nuclear-zone-alerts-'+NZ.today()+'.csv',NZ.csv(nrows),'text/csv'); },750);
   });
   function studentCsv(){
     var rows=[['First name','Surname','Level','Tutor','Username','Password','Phone','Email','School','Status','Lessons','Owing (R)','Registered']];
@@ -407,7 +729,7 @@
     return rows;
   }
 
-  /* copy handler (works for slips and anywhere data-copy is set) */
+  /* copy handler, shared by slips, Teams links and anything with data-copy */
   document.addEventListener('click',function(e){
     var b=e.target.closest('[data-copy]'); if(!b) return;
     var text=decodeURIComponent(b.dataset.copy);
@@ -416,11 +738,11 @@
   });
 
   /* ---- glue ---- */
-  function badge(status){ var lab=status.charAt(0).toUpperCase()+status.slice(1); return '<span class="badge badge--'+status+'"><i></i>'+lab+'</span>'; }
-  function base(){ return location.href.replace(/[^/]*$/,''); }
-  function when(iso){ var d=new Date(iso); return NZ.prettyDate(d.toISOString().slice(0,10))+' · '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-  function draw(){ fillTutorFilter(); drawOver(); drawApps(); drawTutors(); drawStudents(); drawLog(); $('au').value=NZ.adminUser(); }
-
+  function draw(){
+    fillTutorFilter(); drawOver(); drawNotes(); drawApps(); drawTutors(); drawStudents();
+    drawFaces(); drawWatch(); drawHelp(); drawTeams(); drawLog(); drawBell();
+    $('au').value=NZ.adminUser(); $('aph').value=NZ.adminPhone();
+  }
   NZ.onChange(function(){ if(!$('app').hidden) draw(); });
   if(sessionStorage.getItem('nz.admin')==='1') unlock(); else $('u').focus();
 })();
