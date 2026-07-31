@@ -323,6 +323,71 @@ textarea{resize:vertical;min-height:76px;line-height:1.55}
 .portal .p-tutor{background:linear-gradient(135deg,#00CFE8,#0091A8);color:#04252B}
 .portal .p-student{background:linear-gradient(135deg,#2FBF71,#1c7a48);color:#04240F}
 
+/* ==================================================== photos & name tags */
+/* A face and a name under it. Used for students, and for tutors where the
+   highest qualification sits under the name.                             */
+.person{display:flex;flex-direction:column;align-items:center;text-align:center;
+  background:#fff;border:1px solid var(--line);border-radius:16px;padding:1rem .8rem;
+  transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
+.person:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,26,46,.10)}
+.person__pic{width:104px;height:104px;border-radius:50%;object-fit:cover;display:block;
+  background:var(--paper);border:3px solid var(--beam);box-shadow:0 6px 18px rgba(0,207,232,.22)}
+.person--tutor .person__pic{border-color:var(--flame);box-shadow:0 6px 18px rgba(255,138,60,.24)}
+.person__pic--empty{display:grid;place-items:center;font-family:var(--display);font-weight:700;
+  font-size:2rem;color:var(--slate);letter-spacing:-.02em}
+.person__tag{margin-top:.7rem;width:100%}
+.person__name{font-family:var(--display);font-weight:700;font-size:1rem;color:var(--ink);
+  line-height:1.25;letter-spacing:-.01em}
+.person__sub{font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--slate);margin-top:.22rem}
+.person__degree{font-size:.8rem;color:var(--beam-deep);margin-top:.3rem;line-height:1.35;font-weight:600}
+.person__acts{display:flex;gap:.4rem;justify-content:center;flex-wrap:wrap;margin-top:.6rem}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:.9rem}
+
+/* the small round face used inside tables and chat rows */
+.face{width:34px;height:34px;border-radius:50%;object-fit:cover;flex:none;
+  background:var(--paper);border:2px solid var(--line)}
+.face--sm{width:26px;height:26px;border-width:1px}
+.face--empty{display:grid;place-items:center;font-family:var(--display);font-weight:700;
+  font-size:.78rem;color:var(--slate)}
+.namecell{display:flex;align-items:center;gap:.55rem}
+
+/* the file picker, dressed as a button */
+.pickpic{position:relative;overflow:hidden;display:inline-flex}
+.pickpic input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+
+/* ======================================================== notifications */
+.bell{position:relative;display:inline-flex}
+.bell__count{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 5px;
+  border-radius:99px;background:var(--flame);color:#fff;font-family:var(--mono);font-size:.62rem;
+  font-weight:700;display:grid;place-items:center;box-shadow:0 0 0 2px var(--void)}
+.notes{display:flex;flex-direction:column;gap:.5rem}
+.note-row{display:flex;gap:.75rem;align-items:flex-start;background:#fff;border:1px solid var(--line);
+  border-left:3px solid var(--line);border-radius:12px;padding:.7rem .85rem;transition:background .15s}
+.note-row.is-new{border-left-color:var(--beam);background:rgba(0,207,232,.05)}
+.note-row.is-urgent{border-left-color:var(--flame);background:rgba(255,138,60,.06)}
+.note-row__ico{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;
+  font-size:.9rem;background:var(--paper)}
+.note-row__body{flex:1;min-width:0}
+.note-row__t{font-weight:600;font-size:.92rem;color:var(--ink);line-height:1.35}
+.note-row__d{font-size:.83rem;color:var(--slate);margin-top:.15rem;word-break:break-word}
+.note-row__when{font-family:var(--mono);font-size:.7rem;color:var(--slate);white-space:nowrap}
+
+/* =========================================================== complaints */
+/* Deliberately warmer than the lesson chat, so it reads as "a quiet word
+   with the person who runs this", not another lesson message.           */
+.helpbox{background:linear-gradient(180deg,rgba(255,138,60,.08),rgba(255,255,255,0));
+  border:1px solid var(--line);border-radius:16px;padding:1rem}
+.help__log{display:flex;flex-direction:column;gap:.55rem;max-height:340px;overflow:auto;padding:.2rem}
+.help__msg{max-width:84%;padding:.6rem .8rem;border-radius:14px;font-size:.9rem;line-height:1.45}
+.help__msg small{display:block;font-family:var(--mono);font-size:.64rem;opacity:.62;margin-top:.3rem}
+.help__msg--mine{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:5px}
+.help__msg--them{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:5px}
+.help__new{display:flex;gap:.5rem;margin-top:.7rem}
+.help__new textarea{flex:1;min-height:64px;resize:vertical;font-family:var(--body);font-size:.92rem;
+  padding:.6rem .7rem;border:1px solid var(--line);border-radius:11px;background:#fff}
+.help__new textarea:focus{outline:none;border-color:var(--beam);box-shadow:0 0 0 3px rgba(0,207,232,.16)}
+
 /* ============================================================ printing */
 @media print{
   .top,.tabs,.bar,.btn,.chat__new,.note{display:none !important}
