@@ -41,9 +41,9 @@
     <h1>My <span class="gate__accent">lessons</span></h1>
     <p>Sign in with the username and password Tapuwa sent you.</p>
     <label class="lbl" for="uname">Username</label>
-    <input id="uname" type="text" autocomplete="username" placeholder="your username" style="margin-bottom:.6rem">
+    <input id="uname" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="your username" style="margin-bottom:.6rem">
     <label class="lbl" for="pw">Password</label>
-    <input id="pw" type="password" autocomplete="current-password" placeholder="password">
+    <input id="pw" type="password" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="password">
     <p class="gate__err" id="codeErr"></p>
     <button class="btn btn--flame" id="codeGo" style="width:100%;justify-content:center">Open my dashboard</button>
     <p style="font-size:.78rem;color:var(--slate);margin:.9rem 0 0">
@@ -254,6 +254,15 @@
     var u = $('uname').value.trim(), pw = $('pw').value;
     if (!u || !pw){ $('codeErr').textContent = 'Enter your username and password.'; return; }
     if (signIn(u, pw)){ $('codeErr').textContent = ''; return; }
+
+    /* Nothing has ever been set up in THIS browser. Saying "wrong
+       password" here would be a lie — the account is real, it just lives
+       on the machine Tapuwa set it up on. */
+    if (NZ.isBlankDevice()){
+      $('codeErr').innerHTML = 'This device has no lessons on it yet. Your dashboard opens on the ' +
+        'device Tapuwa set it up on — message him and he will sort it out.';
+      return;
+    }
     var s = NZ.studentByUsername(u);
     if (s && (s.status !== 'active' || !s.active))
       $('codeErr').textContent = 'This account is not active yet. Please contact Tapuwa.';
