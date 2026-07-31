@@ -68,6 +68,7 @@
     <button class="tab" role="tab" aria-selected="true"  data-panel="p-lessons">Lessons</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-students">Students</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-messages">Messages <span class="pip" id="msgPip" hidden>0</span></button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-help">Contact admin <span class="pip" id="helpPip" hidden>0</span></button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-setup">Setup</button>
   </div>
 </div>
@@ -162,11 +163,10 @@
   <section class="panel" id="p-students" role="tabpanel">
     <div class="head">
       <div>
-        <h2>Students</h2>
-        <p>Everyone who has registered on the website lands here. Send each one their code and the link to their dashboard.</p>
+        <h2>My students</h2>
+        <p>The students Tapuwa has assigned to you. Ask him to register or remove anyone — he handles all accounts.</p>
       </div>
       <span class="head__spacer"></span>
-      <button class="btn btn--flame" id="addStudent">＋ Add a student by hand</button>
       <button class="btn btn--ghost" id="exportStudents">Export to Excel</button>
     </div>
 
@@ -174,6 +174,7 @@
       <table>
         <thead>
           <tr>
+            <th style="min-width:56px">Photo</th>
             <th style="min-width:150px">First name</th>
             <th style="min-width:150px">Surname</th>
             <th style="min-width:120px">Booking as</th>
@@ -186,8 +187,7 @@
             <th class="num">Lessons</th>
             <th class="num">Owing</th>
             <th style="min-width:130px">Login / status</th>
-            <th style="min-width:210px">Actions</th>
-            <th></th>
+            <th style="min-width:200px">Actions</th>
           </tr>
         </thead>
         <tbody id="stuRows"></tbody>
@@ -215,11 +215,30 @@
     </div>
   </section>
 
+  <!-- ====================================================== CONTACT ADMIN -->
+  <section class="panel" id="p-help" role="tabpanel">
+    <div class="head"><div><h2>Contact Tapuwa</h2>
+      <p>A private line to whoever runs NUCLEAR-ZONE — pay queries, a difficult student, a clash you cannot fix, or anything that is going wrong. Your students never see any of this.</p></div></div>
+    <div class="helpbox">
+      <div class="help__log" id="helpLog"></div>
+      <div class="help__new">
+        <textarea id="helpText" placeholder="Write to the admin…  (Ctrl+Enter sends)"></textarea>
+        <button class="btn btn--flame" id="helpSend">Send</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ============================================================== SETUP -->
   <section class="panel" id="p-setup" role="tabpanel">
     <div class="head"><div><h2>Setup</h2><p>Housekeeping, and the honest note about where this data lives.</p></div></div>
 
     <div class="grid2">
+      <div class="box">
+        <h3>Your name tag</h3>
+        <p style="color:var(--slate);font-size:.88rem">Your picture and your highest degree, as students see it.</p>
+        <div id="meCard" style="max-width:200px;margin:.6rem auto 0"></div>
+      </div>
+
       <div class="box">
         <h3>Your PIN</h3>
         <p style="color:var(--slate);font-size:.88rem">Four digits or more. It is kept in this browser only.</p>
@@ -334,6 +353,8 @@
       document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
       $(t.dataset.panel).classList.add('on');
       if (t.dataset.panel === 'p-messages') drawThreads();
+      if (t.dataset.panel === 'p-help') drawHelp();
+      if (t.dataset.panel === 'p-setup') drawMeCard();
     });
   });
 
@@ -522,7 +543,9 @@
       var tr = document.createElement('tr');
       tr.dataset.id = s.id;
       var stat = '<span class="badge badge--' + s.status + '"><i></i>' + s.status.charAt(0).toUpperCase() + s.status.slice(1) + '</span>';
+      var nm = (s.firstName + ' ' + s.surname).trim();
       tr.innerHTML =
+        '<td class="pad">' + face(s.photo, nm) + '</td>' +
         '<td><input class="cell" data-f="firstName" value="' + esc(s.firstName) + '"></td>' +
         '<td><input class="cell" data-f="surname" value="' + esc(s.surname) + '"></td>' +
         '<td><input class="cell" data-f="role" value="' + esc(s.role) + '"></td>' +
@@ -537,12 +560,38 @@
         '<td class="pad"><span class="code">' + esc(s.username || '—') + '</span><br>' + stat + '</td>' +
         '<td class="pad" style="white-space:nowrap">' +
           '<button class="btn btn--sm btn--quiet" data-act="wa">Send login</button> ' +
-          '<button class="btn btn--sm btn--quiet" data-act="' + (s.active ? 'suspend' : 'activate') + '">' + (s.active ? 'Suspend' : 'Activate') + '</button>' +
-        '</td>' +
-        '<td class="pad"><button class="rowdel" data-act="del" aria-label="Remove this student">✕</button></td>';
+          '<label class="btn btn--sm btn--quiet pickpic">Photo' +
+            '<input type="file" accept="image/*" data-pic="student:' + s.id + '"></label>' +
+        '</td>';
       tb.appendChild(tr);
     });
   }
+
+  /* a small round face, or their initials until a picture is added */
+  function face(photo, name, cls){
+    var c = 'face ' + (cls || '');
+    return photo ? '<img class="' + c + '" src="' + photo + '" alt="">'
+                 : '<span class="' + c + ' face--empty">' + esc(NZ.initials(name)) + '</span>';
+  }
+
+  /* picking a picture, anywhere on this page */
+  document.addEventListener('change', function(e){
+    var inp = e.target.closest('[data-pic]');
+    if (!inp) return;
+    var parts = inp.dataset.pic.split(':'), f = inp.files[0];
+    if (!f) return;
+    NZ.shrinkPhoto(f, function(dataUrl){
+      NZ.setPhoto(parts[0], parts[1], dataUrl);
+      drawStudents(); drawMeCard();
+    }, function(msg){ alert(msg); });
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-clearpic]');
+    if (!b) return;
+    var parts = b.dataset.clearpic.split(':');
+    NZ.setPhoto(parts[0], parts[1], '');
+    drawStudents(); drawMeCard();
+  });
 
   $('stuRows').addEventListener('change', function(e){
     var el = e.target, f = el.dataset.f;
@@ -562,29 +611,62 @@
     var id = b.closest('tr').dataset.id;
     var s = NZ.student(id);
 
-    if (b.dataset.act === 'del'){
-      if (confirm('Remove ' + NZ.studentName(id) + ' and all their lessons and messages?')){
-        NZ.removeStudent(id); drawStudents(); fillFilterMenus(); drawLessons();
-      }
-    }
-    if (b.dataset.act === 'suspend'){ NZ.setStudentActive(id, false); drawStudents(); }
-    if (b.dataset.act === 'activate'){ NZ.setStudentActive(id, true); drawStudents(); }
     if (b.dataset.act === 'wa'){
-      if (!s.username){ alert('This student has no login yet.'); return; }
+      if (!s.username){ alert('This student has no login yet. Ask Tapuwa to accept them.'); return; }
       var msg = NZ.credentialsMessage(id);
       var num = (s.phone || '').replace(/\D/g,'').replace(/^0/, '27');
       window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(msg), '_blank', 'noopener');
     }
   });
 
-  $('addStudent').addEventListener('click', function(){
-    var first = prompt('First name?'); if (!first) return;
-    var last = prompt('Surname?') || '';
-    var s = NZ.addStudent({ firstName: first, surname: last, level: '', role: 'Learner', tutorId: me.id });
-    var cred = NZ.acceptStudent(s.id, me.id);   /* give them a working login straight away */
-    drawStudents(); fillFilterMenus(); drawLessons();
-    alert(first + ' is on your register.\nUsername: ' + cred.username + '\nPassword: ' + cred.password +
-          '\n\nUse "Send login" to WhatsApp it to them.');
+  /* ================================================== my own name tag */
+  function drawMeCard(){
+    var t = NZ.tutor(me.id) || me;
+    var pic = t.photo
+      ? '<img class="person__pic" src="' + t.photo + '" alt="">'
+      : '<span class="person__pic person__pic--empty">' + esc(NZ.initials(t.name)) + '</span>';
+    $('meCard').innerHTML =
+      '<div class="person person--tutor">' + pic +
+        '<div class="person__tag">' +
+          '<div class="person__name">' + esc(t.name) + '</div>' +
+          '<div class="person__sub">Tutor</div>' +
+          '<div class="person__degree">' + esc(t.degree || 'Degree not set — ask the admin') + '</div>' +
+        '</div>' +
+        '<div class="person__acts">' +
+          '<label class="btn btn--sm btn--quiet pickpic">' + (t.photo ? 'Change' : 'Add photo') +
+            '<input type="file" accept="image/*" data-pic="tutor:' + t.id + '"></label>' +
+          (t.photo ? '<button class="btn btn--sm btn--quiet" data-clearpic="tutor:' + t.id + '">Remove</button>' : '') +
+        '</div></div>';
+  }
+
+  /* ============================================== the private admin line */
+  function drawHelp(){
+    var msgs = NZ.complaints('tutor', me.id);
+    /* only counts as read once this tab is actually on screen */
+    if ($('p-help').classList.contains('on')) NZ.markComplaintsRead('tutor', 'tutor', me.id);
+    $('helpLog').innerHTML = msgs.length ? msgs.map(function(c){
+      return '<div class="help__msg help__msg--' + (c.from === 'tutor' ? 'mine' : 'them') + '">' +
+        esc(c.text) + '<small>' + (c.from === 'tutor' ? 'You' : 'Tapuwa') + ' · ' + whenShort(c.at) + '</small></div>';
+    }).join('') : '<p style="color:var(--slate);font-size:.9rem">Nothing here yet. Anything you write goes straight to Tapuwa and nowhere else.</p>';
+    $('helpLog').scrollTop = $('helpLog').scrollHeight;
+    var un = NZ.unreadComplaints('tutor', 'tutor', me.id);
+    $('helpPip').hidden = un === 0; $('helpPip').textContent = un;
+  }
+  function whenShort(iso){
+    var d = new Date(iso);
+    return NZ.prettyDate(d.toISOString().slice(0,10)) + ' ' +
+           String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+  function sendHelp(){
+    var t = $('helpText').value;
+    if (!t.trim()) return;
+    NZ.addComplaint('tutor', me.id, 'tutor', t);
+    $('helpText').value = '';
+    drawHelp();
+  }
+  $('helpSend').addEventListener('click', sendHelp);
+  $('helpText').addEventListener('keydown', function(e){
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendHelp();
   });
 
   /* =========================================================== messages */
@@ -719,12 +801,13 @@
            String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
   }
 
-  function drawAll(){ fillFilterMenus(); drawLessons(); drawStudents(); drawThreads(); }
+  function drawAll(){ fillFilterMenus(); drawLessons(); drawStudents(); drawThreads(); drawMeCard(); drawHelp(); }
 
   /* if the student changes something in another tab, this one follows */
   NZ.onChange(function(){
     if ($('app').hidden) return;
-    fillFilterMenus(); drawLessons(); drawStudents();
+    fillFilterMenus(); drawLessons(); drawStudents(); drawMeCard();
+    if ($('p-help').classList.contains('on')) drawHelp();
     if ($('p-messages').classList.contains('on')) drawThreads(); else drawCards();
   });
 
