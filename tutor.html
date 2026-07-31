@@ -27,10 +27,10 @@
     <h1>Tutor <span class="gate__accent">sign-in</span></h1>
     <p id="gateLead">Enter the username Tapuwa sent you.</p>
     <label class="lbl" for="uname">Username</label>
-    <input id="uname" type="text" autocomplete="username" placeholder="your username" style="margin-bottom:.6rem">
+    <input id="uname" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="your username" style="margin-bottom:.6rem">
     <div id="pinWrap">
       <label class="lbl" for="pin" id="pinLabel">PIN</label>
-      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" placeholder="••••">
+      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="8" placeholder="••••">
     </div>
     <p class="gate__err" id="pinErr"></p>
     <button class="btn btn--flame" id="pinGo" style="width:100%;justify-content:center">Open the register</button>
@@ -334,6 +334,13 @@
     }
     if (NZ.tutorLogin(u, pin)){ me = NZ.tutorByUsername(u); $('pinErr').textContent = ''; unlock(); return; }
 
+    /* Nothing has ever been set up in THIS browser — the account exists,
+       just not here. Do not call a correct PIN wrong. */
+    if (NZ.isBlankDevice()){
+      $('pinErr').innerHTML = 'This device has no register on it yet. Your dashboard opens on the ' +
+        'device the admin set it up on — ask him to sort it out.';
+      return;
+    }
     var t = NZ.tutorByUsername(u);
     if (t && !t.active) $('pinErr').textContent = 'This account is suspended. Ask the admin to reactivate it.';
     else $('pinErr').textContent = 'That username or PIN does not match.';
