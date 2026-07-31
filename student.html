@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My lessons — NUCLEAR-ZONE</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#080E22">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23080E22'/%3E%3Cg fill='none' stroke='%2300CFE8' stroke-width='1.6'%3E%3Cellipse cx='16' cy='16' rx='11' ry='4.6'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='4.6' transform='rotate(60 16 16)'/%3E%3Cellipse cx='16' cy='16' rx='11' ry='4.6' transform='rotate(120 16 16)'/%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23FF8A3C'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="nz-dash.css">
+<style>
+  /* the one screen that is only here: what is coming next */
+  .next{
+    background:linear-gradient(135deg,var(--navy) 0%,var(--void) 100%);
+    color:#fff;border-radius:16px;padding:clamp(1rem,3vw,1.5rem);margin-bottom:1.2rem;
+    position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.09);
+  }
+  .next::before{
+    content:"";position:absolute;right:-70px;top:-70px;width:240px;height:240px;border-radius:50%;
+    background:radial-gradient(circle,rgba(0,207,232,.28),transparent 68%);pointer-events:none;
+  }
+  .next .eyebrow{color:var(--beam)}
+  .next h2{font-size:clamp(1.3rem,1rem + 1.4vw,1.9rem);margin-bottom:.3rem}
+  .next .meta{font-family:var(--mono);font-size:.86rem;color:#B9C6DC;letter-spacing:.02em}
+  .next .acts{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
+  .next .say{display:flex;align-items:center;gap:.5rem;margin-top:.85rem;font-size:.88rem;color:#DCE6F5}
+</style>
+</head>
+<body>
+
+<!-- ==================================================================
+     SIGN IN — the access code the tutor sends after registration
+     ================================================================== -->
+<div class="gate gate--student" id="gate">
+  <div class="gate__card">
+    <span class="gate__role">Student</span>
+    <p class="eyebrow">NUCLEAR-ZONE</p>
+    <h1>My <span class="gate__accent">lessons</span></h1>
+    <p>Sign in with the username and password Tapuwa sent you.</p>
+    <label class="lbl" for="uname">Username</label>
+    <input id="uname" type="text" autocomplete="username" placeholder="your username" style="margin-bottom:.6rem">
+    <label class="lbl" for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password" placeholder="password">
+    <p class="gate__err" id="codeErr"></p>
+    <button class="btn btn--flame" id="codeGo" style="width:100%;justify-content:center">Open my dashboard</button>
+    <p style="font-size:.78rem;color:var(--slate);margin:.9rem 0 0">
+      No login yet? Once Tapuwa accepts your booking he sends it on WhatsApp and email. Lost it? Message him and he'll resend.
+    </p>
+    <div class="gate__switch"><a href="index.html">Book a lesson</a><a href="admin.html">Admin</a><a href="tutor.html">Tutor</a></div>
+  </div>
+</div>
+
+<div id="app" hidden>
+
+<header class="top">
+  <div class="wrap top__in">
+    <a class="brand" href="#" aria-label="NUCLEAR-ZONE">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <rect width="48" height="48" rx="12" fill="#0F1A2E"/>
+        <g fill="none" stroke="#00CFE8" stroke-width="1.7">
+          <ellipse cx="24" cy="24" rx="16" ry="6.6"/>
+          <ellipse cx="24" cy="24" rx="16" ry="6.6" transform="rotate(60 24 24)"/>
+          <ellipse cx="24" cy="24" rx="16" ry="6.6" transform="rotate(120 24 24)"/>
+        </g>
+        <circle cx="24" cy="24" r="4.6" fill="#FF8A3C"/>
+      </svg>
+      <span><b>NUCLEAR</b><span>-ZONE</span><small>My lessons</small></span>
+    </a>
+    <span class="top__spacer"></span>
+    <span class="who"><b id="whoName">—</b> <span id="whoCode" class="code"></span></span>
+    <button class="btn btn--ghost btn--sm" id="outBtn" style="color:#fff;border-color:rgba(255,255,255,.22)">Sign out</button>
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <div class="wrap">
+    <button class="tab" role="tab" aria-selected="true"  data-panel="p-lessons">My lessons</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-pay">Payments</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-msg">Messages <span class="pip" id="msgPip" hidden>0</span></button>
+  </div>
+</div>
+
+<main>
+<div class="wrap">
+
+  <!-- ============================================================ LESSONS -->
+  <section class="panel on" id="p-lessons" role="tabpanel">
+
+    <div class="next" id="next"></div>
+
+    <div class="cards" id="cards"></div>
+
+    <div class="head">
+      <div>
+        <h2>Every lesson</h2>
+        <p>The dot on the left says where each lesson stands. Tap <b>Accept</b> and the lesson is confirmed with your tutor.</p>
+      </div>
+      <span class="head__spacer"></span>
+      <button class="btn btn--ghost" id="exportCsv">Download as a spreadsheet</button>
+      <button class="btn btn--ghost" id="printBtn">Print</button>
+    </div>
+
+    <div class="key">
+      <span><i class="dot dot--pending"></i> Pending — please accept or decline</span>
+      <span><i class="dot dot--accepted"></i> Accepted</span>
+      <span><i class="dot dot--missed"></i> Missed</span>
+      <span><i class="dot dot--done"></i> Taught</span>
+      <span><i class="dot dot--declined"></i> Declined</span>
+    </div>
+
+    <div class="sheet">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:126px">Status</th>
+            <th style="min-width:130px">Subject</th>
+            <th style="min-width:200px">Topic</th>
+            <th style="min-width:130px">Date</th>
+            <th>From</th>
+            <th>To</th>
+            <th class="num">Hrs</th>
+            <th class="num">To be paid</th>
+            <th class="num">Paid</th>
+            <th class="num">Balance</th>
+            <th style="min-width:230px">Meeting</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tfoot>
+          <tr>
+            <td class="lbl" colspan="6">Totals</td>
+            <td class="num" id="tHrs">0</td>
+            <td class="num" id="tFee">R 0.00</td>
+            <td class="num" id="tPaid">R 0.00</td>
+            <td class="num" id="tBal">R 0.00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="note note--beam" style="margin-top:.9rem">
+      <b>Adding a lesson to Teams.</b> Tap <b>Add to calendar</b> on any lesson. The file that downloads opens in
+      Teams or Outlook and puts the lesson in your calendar with a reminder half an hour before.
+    </div>
+  </section>
+
+  <!-- =========================================================== PAYMENTS -->
+  <section class="panel" id="p-pay" role="tabpanel">
+    <div class="cards" id="payCards"></div>
+    <div class="head">
+      <div><h2>Statement</h2><p>Every lesson charged, everything paid, and what is left.</p></div>
+      <span class="head__spacer"></span>
+      <button class="btn btn--ghost" id="exportPay">Download statement</button>
+    </div>
+    <div class="sheet">
+      <table style="min-width:760px">
+        <thead>
+          <tr>
+            <th style="min-width:130px">Date</th>
+            <th style="min-width:130px">Subject</th>
+            <th style="min-width:200px">Topic</th>
+            <th class="num">Charged</th>
+            <th class="num">Paid</th>
+            <th class="num">Owing on this lesson</th>
+            <th class="num">Running balance</th>
+          </tr>
+        </thead>
+        <tbody id="payRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- =========================================================== MESSAGES -->
+  <section class="panel" id="p-msg" role="tabpanel">
+    <div class="head">
+      <div><h2>Messages</h2><p>Write to Tapuwa here. Questions about a topic, changing a time, anything.</p></div>
+    </div>
+    <div class="chat">
+      <div class="chat__log" id="chatLog"></div>
+      <div class="chat__new">
+        <textarea id="chatText" placeholder="Write a message…" aria-label="Your message"></textarea>
+        <button class="btn btn--flame" id="chatSend">Send</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+</div>
+
+<script src="nz-store.js"></script>
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var me = null;
+
+  /* ============================================================= sign in */
+  function open(s){
+    me = s;
+    localStorage.setItem('nz.stu', s.username);
+    NZ.setActor('student', (s.firstName + ' ' + s.surname).trim());
+    $('gate').style.display = 'none';
+    $('app').hidden = false;
+    $('whoName').textContent = (s.firstName + ' ' + s.surname).trim();
+    $('whoCode').textContent = '@' + s.username;
+    NZ.markRead(s.id, 'student');
+    drawAll();
+  }
+  function signIn(u, pw){
+    var s = NZ.studentLogin(u, pw);
+    if (!s) return false;
+    open(s);
+    return true;
+  }
+
+  $('codeGo').addEventListener('click', tryLogin);
+  $('pw').addEventListener('keydown', function(e){ if (e.key === 'Enter') tryLogin(); });
+  $('uname').addEventListener('keydown', function(e){ if (e.key === 'Enter') $('pw').focus(); });
+  function tryLogin(){
+    var u = $('uname').value.trim(), pw = $('pw').value;
+    if (!u || !pw){ $('codeErr').textContent = 'Enter your username and password.'; return; }
+    if (signIn(u, pw)){ $('codeErr').textContent = ''; return; }
+    var s = NZ.studentByUsername(u);
+    if (s && (s.status !== 'active' || !s.active))
+      $('codeErr').textContent = 'This account is not active yet. Please contact Tapuwa.';
+    else
+      $('codeErr').textContent = 'That username or password does not match. Ask Tapuwa to resend it.';
+    $('pw').select();
+  }
+  $('outBtn').addEventListener('click', function(){
+    localStorage.removeItem('nz.stu');
+    location.href = location.pathname;
+  });
+
+  /* =============================================================== tabs */
+  var tabs = document.querySelectorAll('.tab');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.setAttribute('aria-selected','false'); });
+      t.setAttribute('aria-selected','true');
+      document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+      $(t.dataset.panel).classList.add('on');
+      if (t.dataset.panel === 'p-msg'){ NZ.markRead(me.id,'student'); drawChat(); drawPip(); }
+    });
+  });
+
+  /* ============================================================ next up */
+  function drawNext(){
+    var now = new Date().toISOString().slice(0,16);
+    var soon = NZ.lessons(me.id).filter(function(l){
+      return (l.date + 'T' + l.end) >= now && l.status !== 'declined' && l.status !== 'missed';
+    })[0];
+
+    var box = $('next');
+    if (!soon){
+      box.innerHTML =
+        '<p class="eyebrow">Next up</p>' +
+        '<h2>Nothing booked yet</h2>' +
+        '<p class="meta">When Tapuwa sets your next lesson it shows here, and you can accept it in one tap.</p>';
+      return;
+    }
+
+    var st = NZ.STATUS[soon.status];
+    box.innerHTML =
+      '<p class="eyebrow">Next up</p>' +
+      '<h2>' + esc(soon.subject) + (soon.topic ? ' — ' + esc(soon.topic) : '') + '</h2>' +
+      '<p class="meta">' + NZ.prettyDate(soon.date) + ' · ' + soon.start + ' to ' + soon.end +
+        ' · ' + NZ.hours(soon.start, soon.end).toFixed(1) + ' hours · ' + NZ.money(soon.fee) + '</p>' +
+      '<div class="say"><i class="dot dot--' + soon.status + '"></i> ' + st.label + ' — ' + st.note + '</div>' +
+      '<div class="acts">' +
+        (soon.status === 'pending'
+          ? '<button class="btn btn--green" data-nx="accepted" data-id="' + soon.id + '">Accept the lesson</button>' +
+            '<button class="btn btn--ghost" data-nx="declined" data-id="' + soon.id + '" style="color:#fff;border-color:rgba(255,255,255,.24)">I cannot make it</button>'
+          : '') +
+        (soon.teamsUrl
+          ? '<a class="btn btn--beam" href="' + esc(soon.teamsUrl) + '" target="_blank" rel="noopener">Join on Teams</a>'
+          : '') +
+        '<button class="btn btn--ghost" data-ics="' + soon.id + '" style="color:#fff;border-color:rgba(255,255,255,.24)">Add to calendar</button>' +
+      '</div>';
+  }
+
+  $('next').addEventListener('click', function(e){
+    var b = e.target.closest('[data-nx],[data-ics]');
+    if (!b) return;
+    if (b.dataset.nx){ NZ.updateLesson(b.dataset.id, { status: b.dataset.nx }); drawAll(); }
+    if (b.dataset.ics){ var l = NZ.lesson(b.dataset.ics); NZ.download('lesson-' + l.date + '.ics', NZ.ics(l), 'text/calendar'); }
+  });
+
+  /* ============================================================== cards */
+  function drawCards(){
+    var mine = NZ.lessons(me.id), t = NZ.totals(mine);
+    var pending = mine.filter(function(l){ return l.status === 'pending'; }).length;
+    var taught = mine.filter(function(l){ return l.status === 'done'; }).length;
+
+    $('cards').innerHTML = [
+      card('Lessons booked', mine.length, t.hours.toFixed(1) + ' hours in total', ''),
+      card('Taught so far', taught, 'lessons completed', 'card--green'),
+      card('Waiting on you', pending, pending ? 'accept or decline these' : 'nothing to answer', pending ? 'card--flame' : ''),
+      card('Balance owing', NZ.money(t.balance), t.balance > 0 ? 'still to be paid' : 'all settled', t.balance > 0 ? 'card--flame' : 'card--green')
+    ].join('');
+
+    $('payCards').innerHTML = [
+      card('Charged in total', NZ.money(t.fee), 'across ' + mine.length + ' lessons', ''),
+      card('Paid', NZ.money(t.paid), 'received by your tutor', 'card--green'),
+      card('Balance owing', NZ.money(t.balance), t.balance > 0 ? 'outstanding' : 'nothing outstanding', t.balance > 0 ? 'card--flame' : 'card--green')
+    ].join('');
+  }
+  function card(k, v, s, cls){
+    return '<div class="card ' + cls + '"><div class="k">' + k + '</div>' +
+           '<div class="v">' + v + '</div><div class="s">' + s + '</div></div>';
+  }
+
+  /* ============================================================ lessons */
+  function drawLessons(){
+    var mine = NZ.lessons(me.id), tb = $('rows');
+    tb.innerHTML = '';
+
+    if (!mine.length){
+      tb.innerHTML = '<tr><td colspan="11"><div class="empty"><h3>No lessons on the register yet</h3>' +
+        '<p>Your tutor adds them here once your times are agreed. You will see them the moment they are set.</p></div></td></tr>';
+    }
+
+    mine.forEach(function(l){
+      var bal = NZ.balance(l);
+      var st = NZ.STATUS[l.status];
+      var over = NZ.isPast(l);
+      var tr = document.createElement('tr');
+      tr.dataset.id = l.id;
+
+      var acts = '';
+      if (l.status === 'pending' && !over){
+        acts += '<button class="btn btn--sm btn--green" data-nx="accepted">Accept</button> ' +
+                '<button class="btn btn--sm btn--quiet" data-nx="declined">Decline</button> ';
+      }
+      if (l.status === 'accepted' && !over){
+        acts += '<button class="btn btn--sm btn--quiet" data-nx="pending">Undo</button> ';
+      }
+      if (l.teamsUrl && !over){
+        acts += '<a class="btn btn--sm btn--beam" href="' + esc(l.teamsUrl) + '" target="_blank" rel="noopener">Join on Teams</a> ';
+      }
+      if (!over){
+        acts += '<button class="btn btn--sm btn--quiet" data-ics="1">Add to calendar</button>';
+      }
+      if (over && !acts) acts = '<span style="color:var(--slate);font-size:.82rem">—</span>';
+
+      tr.innerHTML =
+        '<td class="pad"><span style="display:inline-flex;align-items:center;gap:.45rem">' +
+          '<i class="dot dot--' + l.status + '" title="' + esc(st.note) + '"></i>' + st.label + '</span></td>' +
+        '<td class="pad">' + esc(l.subject) + '</td>' +
+        '<td class="pad">' + (esc(l.topic) || '<span style="color:var(--slate)">To be set</span>') + '</td>' +
+        '<td class="pad mono">' + NZ.prettyDate(l.date) + '</td>' +
+        '<td class="pad mono">' + l.start + '</td>' +
+        '<td class="pad mono">' + l.end + '</td>' +
+        '<td class="num">' + NZ.hours(l.start, l.end).toFixed(2) + '</td>' +
+        '<td class="num">' + NZ.money(l.fee) + '</td>' +
+        '<td class="num">' + NZ.money(l.paid) + '</td>' +
+        '<td class="num ' + (bal > 0 ? 'owing' : 'settled') + '">' + NZ.money(bal) + '</td>' +
+        '<td class="pad" style="white-space:nowrap">' + acts + '</td>';
+      tb.appendChild(tr);
+    });
+
+    var t = NZ.totals(mine);
+    $('tHrs').textContent  = t.hours.toFixed(2);
+    $('tFee').textContent  = NZ.money(t.fee);
+    $('tPaid').textContent = NZ.money(t.paid);
+    $('tBal').textContent  = NZ.money(t.balance);
+  }
+
+  $('rows').addEventListener('click', function(e){
+    var b = e.target.closest('[data-nx],[data-ics]');
+    if (!b) return;
+    var id = b.closest('tr').dataset.id;
+    var l = NZ.lesson(id);
+
+    if (b.dataset.nx){
+      NZ.updateLesson(id, { status: b.dataset.nx });
+      /* tell the tutor, so a decline never goes unnoticed */
+      if (b.dataset.nx === 'declined'){
+        NZ.addMessage(me.id, 'student',
+          'I cannot make the ' + l.subject + ' lesson on ' + NZ.prettyDate(l.date) + ' at ' + l.start + '.');
+      }
+      drawAll();
+    }
+    if (b.dataset.ics){
+      NZ.download('lesson-' + l.date + '.ics', NZ.ics(l), 'text/calendar');
+    }
+  });
+
+  /* =========================================================== payments */
+  function drawPay(){
+    var mine = NZ.lessons(me.id), tb = $('payRows'), run = 0;
+    tb.innerHTML = '';
+    if (!mine.length){
+      tb.innerHTML = '<tr><td colspan="7"><div class="empty"><p>Nothing charged yet.</p></div></td></tr>';
+      return;
+    }
+    mine.forEach(function(l){
+      var bal = NZ.balance(l);
+      run += bal;
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="pad mono">' + NZ.prettyDate(l.date) + '</td>' +
+        '<td class="pad">' + esc(l.subject) + '</td>' +
+        '<td class="pad">' + (esc(l.topic) || '—') + '</td>' +
+        '<td class="num">' + NZ.money(l.fee) + '</td>' +
+        '<td class="num">' + NZ.money(l.paid) + '</td>' +
+        '<td class="num ' + (bal > 0 ? 'owing' : 'settled') + '">' + NZ.money(bal) + '</td>' +
+        '<td class="num ' + (run > 0 ? 'owing' : 'settled') + '">' + NZ.money(run) + '</td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  /* =========================================================== messages */
+  function drawPip(){
+    var n = NZ.unread(me.id, 'student');
+    $('msgPip').hidden = n === 0;
+    $('msgPip').textContent = n;
+  }
+
+  function drawChat(){
+    var log = $('chatLog');
+    log.innerHTML = '';
+    var ms = NZ.messages(me.id);
+    if (!ms.length){
+      log.innerHTML = '<div class="empty"><h3>No messages yet</h3>' +
+        '<p>Write below and Tapuwa sees it on his register.</p></div>';
+      return;
+    }
+    ms.forEach(function(m){
+      var d = document.createElement('div');
+      d.className = 'bub ' + (m.from === 'student' ? 'bub--me' : 'bub--them');
+      d.innerHTML = esc(m.text).replace(/\n/g,'<br>') +
+                    '<time>' + (m.from === 'student' ? 'You' : 'Tapuwa') + ' · ' + when(m.at) + '</time>';
+      log.appendChild(d);
+    });
+    log.scrollTop = log.scrollHeight;
+  }
+
+  $('chatSend').addEventListener('click', sendChat);
+  $('chatText').addEventListener('keydown', function(e){
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendChat();
+  });
+  function sendChat(){
+    var t = $('chatText').value;
+    if (!t.trim()) return;
+    NZ.addMessage(me.id, 'student', t);
+    $('chatText').value = '';
+    drawChat();
+  }
+
+  /* ============================================================ exports */
+  $('exportCsv').addEventListener('click', function(){
+    var rows = [['Status','Subject','Topic','Date','From','To','Hours','To be paid (R)','Paid (R)','Balance (R)']];
+    NZ.lessons(me.id).forEach(function(l){
+      rows.push([NZ.STATUS[l.status].label, l.subject, l.topic, l.date, l.start, l.end,
+                 NZ.hours(l.start,l.end).toFixed(2), Number(l.fee||0).toFixed(2),
+                 Number(l.paid||0).toFixed(2), NZ.balance(l).toFixed(2)]);
+    });
+    var t = NZ.totals(NZ.lessons(me.id));
+    rows.push([]);
+    rows.push(['TOTALS','','','','','', t.hours.toFixed(2), t.fee.toFixed(2), t.paid.toFixed(2), t.balance.toFixed(2)]);
+    NZ.download('my-lessons-' + NZ.today() + '.csv', NZ.csv(rows), 'text/csv');
+  });
+
+  $('exportPay').addEventListener('click', function(){
+    var rows = [['Date','Subject','Topic','Charged (R)','Paid (R)','Owing (R)']], run = 0;
+    NZ.lessons(me.id).forEach(function(l){
+      run += NZ.balance(l);
+      rows.push([l.date, l.subject, l.topic, Number(l.fee||0).toFixed(2),
+                 Number(l.paid||0).toFixed(2), NZ.balance(l).toFixed(2)]);
+    });
+    rows.push([]);
+    rows.push(['Balance owing','','','','', run.toFixed(2)]);
+    NZ.download('my-statement-' + NZ.today() + '.csv', NZ.csv(rows), 'text/csv');
+  });
+
+  $('printBtn').addEventListener('click', function(){ window.print(); });
+
+  /* =============================================================== glue */
+  function esc(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function when(iso){
+    var d = new Date(iso);
+    return NZ.prettyDate(d.toISOString().slice(0,10)) + ' · ' +
+           String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
+  function drawAll(){ drawNext(); drawCards(); drawLessons(); drawPay(); drawChat(); drawPip(); }
+
+  /* if the tutor edits a row while this page is open, it updates itself */
+  NZ.onChange(function(){
+    if (!me || $('app').hidden) return;
+    me = NZ.student(me.id) || me;
+    drawAll();
+  });
+
+  /* last thing, so everything above exists before the first draw. A student
+     who signed in before is remembered by username so they don't retype it —
+     but only if their account is still active. */
+  var remembered = localStorage.getItem('nz.stu');
+  var s = remembered ? NZ.studentByUsername(remembered) : null;
+  if (s && s.status === 'active' && s.active){
+    open(s);
+  } else {
+    localStorage.removeItem('nz.stu');
+    $('uname').focus();
+  }
+})();
+</script>
+</body>
+</html>

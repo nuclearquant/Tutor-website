@@ -1,0 +1,341 @@
+/* ======================================================================
+   NUCLEAR-ZONE — nz-dash.css
+   Shared skin for the tutor dashboard and the student dashboard.
+   Same tokens as the website, but tightened into a worksheet: hairline
+   grid, monospace numbers, one bright dot doing all the talking.
+   ====================================================================== */
+
+:root{
+  --void:#080E22;
+  --navy:#101B3B;
+  --navy-2:#16234A;
+  --ink:#0F1A2E;
+  --slate:#586887;
+  --slate-2:#8A97AE;
+  --paper:#F4F7FB;
+  --white:#FFFFFF;
+  --beam:#00CFE8;
+  --beam-deep:#0091A8;
+  --flame:#FF8A3C;
+  --line:#E2E8F1;
+  --line-dark:rgba(255,255,255,.12);
+
+  --pending:#FFC53D;
+  --accepted:#2FBF71;
+  --missed:#FF4D4D;
+  --done:#00CFE8;
+  --declined:#8A97AE;
+
+  --display:'Space Grotesk','Helvetica Neue',Arial,sans-serif;
+  --body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'Courier New',monospace;
+
+  --pad:clamp(1rem,3vw,2.2rem);
+  --r:12px;
+  --ease:cubic-bezier(.22,.9,.28,1);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;font-family:var(--body);font-size:.97rem;line-height:1.6;
+  color:var(--ink);background:var(--paper);
+}
+/* the lab-bench grid, same as the website */
+body::before{
+  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(88,104,135,.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(88,104,135,.08) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:-.025em;line-height:1.1;margin:0}
+h1{font-size:clamp(1.5rem,1.1rem + 1.4vw,2.1rem)}
+h2{font-size:1.24rem}
+h3{font-size:1.02rem;letter-spacing:-.015em}
+p{margin:0 0 .8rem}
+a{color:var(--beam-deep)}
+
+.wrap{width:100%;max-width:1440px;margin-inline:auto;padding-inline:var(--pad)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.eyebrow{
+  font-family:var(--mono);font-size:.68rem;font-weight:500;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--beam);margin:0 0 .35rem;
+}
+
+/* ============================================================== masthead */
+.top{
+  background:var(--void);color:#fff;position:sticky;top:0;z-index:40;
+  border-bottom:1px solid var(--line-dark);
+}
+.top__in{display:flex;align-items:center;gap:1rem;min-height:66px;flex-wrap:wrap;padding-block:.55rem}
+.brand{display:flex;align-items:center;gap:.65rem;text-decoration:none;color:#fff}
+.brand svg{width:34px;height:34px;flex:none}
+.brand b{font-family:var(--display);font-weight:700;letter-spacing:-.02em;font-size:1.02rem}
+.brand span{opacity:.62;font-weight:500}
+.brand small{display:block;font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--beam);opacity:.85;font-weight:500}
+.top__spacer{flex:1 1 auto}
+.who{
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;color:#B9C6DC;
+  display:flex;align-items:center;gap:.5rem;
+}
+.who b{color:#fff;font-weight:600;letter-spacing:0;font-family:var(--body)}
+
+/* ================================================================= tabs */
+.tabs{display:flex;gap:.15rem;flex-wrap:wrap;border-bottom:1px solid var(--line-dark);background:var(--void)}
+.tabs .wrap{display:flex;gap:.15rem;flex-wrap:wrap}
+.tab{
+  appearance:none;background:none;border:0;cursor:pointer;color:#93A2BC;
+  font-family:var(--display);font-weight:600;font-size:.92rem;
+  padding:.7rem 1rem;border-bottom:2px solid transparent;margin-bottom:-1px;
+  display:inline-flex;align-items:center;gap:.45rem;
+}
+.tab:hover{color:#fff}
+.tab[aria-selected="true"]{color:#fff;border-bottom-color:var(--flame)}
+.tab .pip{
+  font-family:var(--mono);font-size:.66rem;font-weight:700;background:var(--flame);color:#2A1200;
+  border-radius:99px;padding:.05rem .38rem;line-height:1.5;
+}
+
+/* =============================================================== layout */
+main{padding-block:clamp(1.2rem,3vw,2rem) 4rem}
+.panel{display:none}
+.panel.on{display:block}
+.head{display:flex;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem}
+.head p{color:var(--slate);margin:.3rem 0 0;max-width:62ch;font-size:.92rem}
+.head__spacer{flex:1 1 auto}
+
+/* ================================================================ cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:.7rem;margin-bottom:1.3rem}
+.card{
+  background:var(--white);border:1px solid var(--line);border-radius:var(--r);
+  padding:.85rem .95rem;position:relative;overflow:hidden;
+}
+.card::after{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--beam);opacity:.5}
+.card--flame::after{background:var(--flame);opacity:.75}
+.card--green::after{background:var(--accepted)}
+.card--red::after{background:var(--missed)}
+.card .k{font-family:var(--mono);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--slate)}
+.card .v{font-family:var(--display);font-weight:700;font-size:1.5rem;letter-spacing:-.03em;
+  font-variant-numeric:tabular-nums;margin-top:.15rem}
+.card .s{font-size:.78rem;color:var(--slate)}
+
+/* ================================================================= dots */
+.dot{
+  width:11px;height:11px;border-radius:50%;flex:none;display:inline-block;
+  background:var(--slate-2);position:relative;
+}
+.dot--pending{background:var(--pending);box-shadow:0 0 0 3px rgba(255,197,61,.22)}
+.dot--accepted{background:var(--accepted);box-shadow:0 0 0 3px rgba(47,191,113,.2)}
+.dot--missed{background:var(--missed);box-shadow:0 0 0 3px rgba(255,77,77,.2)}
+.dot--done{background:var(--done);box-shadow:0 0 0 3px rgba(0,207,232,.2)}
+.dot--declined{background:var(--declined);box-shadow:0 0 0 3px rgba(138,151,174,.18)}
+/* the one flourish: a pending lesson breathes, because it wants an answer */
+.dot--pending::after{
+  content:"";position:absolute;inset:-3px;border-radius:50%;
+  border:1px solid var(--pending);animation:ping 2.4s var(--ease) infinite;
+}
+@keyframes ping{0%{transform:scale(.9);opacity:.9}70%,100%{transform:scale(2);opacity:0}}
+
+.key{display:flex;gap:1rem;flex-wrap:wrap;font-size:.8rem;color:var(--slate);margin:.2rem 0 1rem}
+.key span{display:inline-flex;align-items:center;gap:.4rem}
+
+/* ============================================================== sheet */
+.sheet{
+  background:var(--white);border:1px solid var(--line);border-radius:var(--r);
+  overflow:auto;max-height:70vh;position:relative;
+}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:1040px;font-size:.88rem}
+thead th{
+  position:sticky;top:0;z-index:3;background:var(--navy);color:#DCE6F5;text-align:left;
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;font-weight:500;
+  padding:.6rem .55rem;border-bottom:1px solid var(--navy-2);white-space:nowrap;
+}
+thead th.num{text-align:right}
+tbody td{
+  padding:0;border-bottom:1px solid var(--line);border-right:1px solid var(--line);
+  vertical-align:middle;background:var(--white);
+}
+tbody tr:nth-child(even) td{background:#FAFCFE}
+tbody tr:hover td{background:#F0F7FC}
+tbody td:last-child{border-right:0}
+tbody td.pad{padding:.42rem .55rem}
+tbody td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;padding:.42rem .55rem}
+tbody td.owing{color:#C62828;font-weight:600}
+tbody td.settled{color:var(--accepted)}
+tfoot td{
+  position:sticky;bottom:0;z-index:2;background:var(--navy);color:#fff;
+  padding:.55rem;font-family:var(--mono);font-size:.78rem;font-variant-numeric:tabular-nums;
+  border-top:2px solid var(--flame);
+}
+tfoot td.num{text-align:right}
+tfoot td.lbl{font-size:.64rem;letter-spacing:.13em;text-transform:uppercase;color:#B9C6DC}
+
+/* spreadsheet cells you can type straight into */
+.cell{
+  width:100%;border:0;background:transparent;font:inherit;color:inherit;
+  padding:.42rem .55rem;font-family:inherit;
+}
+.cell:focus{outline:2px solid var(--beam);outline-offset:-2px;background:#fff;border-radius:2px}
+input.cell.num,select.cell.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+select.cell{cursor:pointer;appearance:none;padding-right:1.1rem;
+  background-image:linear-gradient(45deg,transparent 50%,var(--slate) 50%),linear-gradient(135deg,var(--slate) 50%,transparent 50%);
+  background-position:calc(100% - 12px) 52%,calc(100% - 8px) 52%;
+  background-size:4px 4px,4px 4px;background-repeat:no-repeat}
+.statuscell{display:flex;align-items:center;gap:.45rem;padding-left:.55rem}
+.statuscell select{padding-left:.15rem;min-width:104px}
+
+.rowdel{
+  appearance:none;border:0;background:none;cursor:pointer;color:var(--slate-2);
+  padding:.35rem .5rem;border-radius:6px;line-height:1;font-size:1rem;
+}
+.rowdel:hover{background:#FFECEC;color:#C62828}
+
+.tag{
+  display:inline-block;font-family:var(--mono);font-size:.66rem;letter-spacing:.06em;
+  padding:.1rem .4rem;border-radius:5px;background:#EAF1F8;color:var(--slate);white-space:nowrap;
+}
+.code{font-family:var(--mono);font-size:.78rem;letter-spacing:.08em;color:var(--beam-deep);font-weight:500}
+
+/* =============================================================== forms */
+.bar{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-bottom:.8rem}
+.fld{display:flex;flex-direction:column;gap:.22rem}
+.fld label,.lbl{font-family:var(--mono);font-size:.63rem;letter-spacing:.13em;text-transform:uppercase;color:var(--slate)}
+input,select,textarea{
+  font-family:var(--body);font-size:.9rem;color:var(--ink);background:var(--white);
+  border:1px solid var(--line);border-radius:8px;padding:.44rem .6rem;
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--beam);outline-offset:-1px;border-color:var(--beam)}
+textarea{resize:vertical;min-height:76px;line-height:1.55}
+.search{min-width:200px}
+
+.btn{
+  appearance:none;cursor:pointer;border:1px solid transparent;border-radius:9px;
+  font-family:var(--display);font-weight:600;font-size:.88rem;letter-spacing:-.01em;
+  padding:.5rem .9rem;display:inline-flex;align-items:center;gap:.42rem;text-decoration:none;
+  background:var(--ink);color:#fff;transition:transform .16s var(--ease),background .16s var(--ease);
+}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn--flame{background:var(--flame);color:#2A1200}
+.btn--beam{background:var(--beam);color:#04252B}
+.btn--ghost{background:transparent;color:var(--ink);border-color:var(--line);}
+.btn--ghost:hover{border-color:var(--slate)}
+.btn--sm{padding:.32rem .6rem;font-size:.8rem;border-radius:7px}
+.btn--green{background:var(--accepted);color:#04240F}
+.btn--quiet{background:#EAF1F8;color:var(--slate);}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+/* ================================================================= box */
+.box{background:var(--white);border:1px solid var(--line);border-radius:var(--r);padding:1rem}
+.box + .box{margin-top:.8rem}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:.8rem;align-items:start}
+
+.note{
+  border-left:3px solid var(--flame);background:#FFF6EF;border-radius:0 8px 8px 0;
+  padding:.7rem .9rem;font-size:.86rem;color:#5A3413;
+}
+.note b{color:#3A2008}
+.note--beam{border-left-color:var(--beam);background:#EDFBFD;color:#0A4954}
+.note--beam b{color:#04333B}
+
+/* ============================================================ messages */
+.threads{display:grid;grid-template-columns:minmax(190px,240px) 1fr;gap:.8rem;align-items:start}
+.thread-list{background:var(--white);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.thread-list button{
+  appearance:none;width:100%;text-align:left;background:none;border:0;cursor:pointer;
+  padding:.6rem .75rem;border-bottom:1px solid var(--line);font:inherit;
+  display:flex;align-items:center;gap:.5rem;
+}
+.thread-list button:last-child{border-bottom:0}
+.thread-list button:hover{background:#F0F7FC}
+.thread-list button[aria-current="true"]{background:#EDFBFD;box-shadow:inset 3px 0 0 var(--beam)}
+.thread-list .nm{flex:1 1 auto;font-weight:600;font-size:.88rem}
+.thread-list .cnt{font-family:var(--mono);font-size:.65rem;background:var(--flame);color:#2A1200;
+  border-radius:99px;padding:.05rem .38rem;font-weight:700}
+
+.chat{background:var(--white);border:1px solid var(--line);border-radius:var(--r);
+  display:flex;flex-direction:column;min-height:340px}
+.chat__log{flex:1 1 auto;padding:.9rem;display:flex;flex-direction:column;gap:.55rem;
+  overflow:auto;max-height:52vh}
+.bub{max-width:74%;padding:.55rem .75rem;border-radius:12px;font-size:.9rem;line-height:1.5}
+.bub time{display:block;font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;opacity:.62;margin-top:.28rem}
+.bub--them{align-self:flex-start;background:#EEF3F9;border-bottom-left-radius:4px}
+.bub--me{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:4px}
+.chat__new{border-top:1px solid var(--line);padding:.7rem;display:flex;gap:.5rem;align-items:flex-end}
+.chat__new textarea{flex:1 1 auto;min-height:44px;max-height:150px}
+
+/* =============================================================== empty */
+.empty{text-align:center;padding:2.6rem 1rem;color:var(--slate)}
+.empty h3{color:var(--ink);margin-bottom:.4rem}
+
+/* ================================================================ gate */
+.gate{min-height:100dvh;display:grid;place-items:center;padding:var(--pad);background:var(--void)}
+.gate__card{
+  width:100%;max-width:430px;background:var(--white);border-radius:18px;padding:clamp(1.4rem,4vw,2.2rem);
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.55);
+}
+.gate__card .eyebrow{color:var(--beam-deep)}
+.gate__card p{color:var(--slate);font-size:.92rem}
+.gate__card input{width:100%;font-family:var(--mono);font-size:1.1rem;letter-spacing:.12em;
+  text-align:center;padding:.7rem;text-transform:uppercase}
+.gate__err{color:#C62828;font-size:.85rem;min-height:1.2rem;margin:.45rem 0 0}
+/* the login card takes on the colour of whichever role is signing in */
+.gate__card input:not([type]),
+.gate__card input[type="text"],
+.gate__card input[type="password"]{text-transform:none;letter-spacing:.02em;font-size:1rem}
+.gate--admin .gate__accent{color:#FFC53D}
+.gate--tutor .gate__accent{color:var(--beam)}
+.gate--student .gate__accent{color:var(--accepted)}
+.gate__role{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--mono);
+  font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;padding:.28rem .6rem;border-radius:99px;margin-bottom:.9rem}
+.gate--admin .gate__role{background:rgba(255,197,61,.16);color:#8a6100}
+.gate--tutor .gate__role{background:rgba(0,207,232,.14);color:var(--beam-deep)}
+.gate--student .gate__role{background:rgba(47,191,113,.15);color:#1c7a48}
+.gate__switch{margin-top:1rem;font-size:.82rem;color:var(--slate);display:flex;gap:.8rem;flex-wrap:wrap}
+.gate__switch a{color:var(--slate);text-decoration:underline;text-underline-offset:2px}
+
+/* ------------------------------------------------ status badges */
+.badge{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--mono);
+  font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;padding:.12rem .45rem;border-radius:6px;white-space:nowrap}
+.badge--active{background:rgba(47,191,113,.14);color:#1c7a48}
+.badge--suspended{background:rgba(255,77,77,.14);color:#b3261e}
+.badge--applicant{background:rgba(255,197,61,.18);color:#8a6100}
+.badge i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+
+/* the credentials slip shown after accepting a student */
+.slip{background:var(--void);color:#fff;border-radius:12px;padding:1rem 1.1rem;margin:.6rem 0}
+.slip h4{font-family:var(--display);margin:0 0 .5rem;font-size:1rem}
+.slip .row{display:flex;justify-content:space-between;gap:1rem;padding:.28rem 0;font-family:var(--mono);font-size:.9rem;border-bottom:1px solid var(--line-dark)}
+.slip .row:last-of-type{border-bottom:0}
+.slip .row b{color:var(--beam);font-weight:600}
+.slip .acts{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+
+/* toolbar of coloured portal buttons for the website header */
+.portal{display:flex;gap:.5rem;flex-wrap:wrap}
+.portal a{font-family:var(--display);font-weight:600;font-size:.85rem;text-decoration:none;
+  padding:.42rem .8rem;border-radius:9px;display:inline-flex;align-items:center;gap:.4rem;
+  border:1px solid transparent;transition:transform .15s var(--ease)}
+.portal a:hover{transform:translateY(-1px)}
+.portal .p-admin{background:linear-gradient(135deg,#FFC53D,#FF8A3C);color:#3A2008}
+.portal .p-tutor{background:linear-gradient(135deg,#00CFE8,#0091A8);color:#04252B}
+.portal .p-student{background:linear-gradient(135deg,#2FBF71,#1c7a48);color:#04240F}
+
+/* ============================================================ printing */
+@media print{
+  .top,.tabs,.bar,.btn,.chat__new,.note{display:none !important}
+  .sheet{max-height:none;border:0}
+  body{background:#fff}
+  body::before{display:none}
+}
+
+@media (max-width:760px){
+  .threads{grid-template-columns:1fr}
+  .head{align-items:flex-start}
+  .sheet{max-height:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+}
