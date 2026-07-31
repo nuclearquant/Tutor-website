@@ -35,12 +35,25 @@ var NZ = (function () {
 
   function blank() {
     return {
-      admin: { username: 'admin', pinHash: hash('1234'), phone: '', photo: '' },
+      admin: { username: 'admin', pinHash: hash('1234'), phone: '', photo: '', devices: [] },
       tutors: [], students: [], lessons: [], messages: [],
       complaints: [], notices: [], activity: [],
       seq: 1
     };
   }
+
+  /* Which page is asking? The demo tutor and students exist so the admin
+     console is never an empty grid. They must NOT be created on a
+     student's or a tutor's own device: doing that invents people who do
+     not exist and makes a correct password look wrong. On those pages an
+     empty browser stays empty, and the sign-in screen says so plainly. */
+  function isSignInPage() {
+    var p = (location.pathname || '').toLowerCase();
+    return /student\.html$|tutor\.html$/.test(p);
+  }
+
+  var blankDevice = false;
+  function isBlankDevice() { return blankDevice; }
 
   function load() {
     if (db) return db;
@@ -48,16 +61,25 @@ var NZ = (function () {
       var raw = localStorage.getItem(KEY);
       db = raw ? JSON.parse(raw) : null;
     } catch (e) { db = null; }
-    if (!db || !db.students) { db = seed(); save(); return db; }
+    if (!db || !db.students) {
+      if (isSignInPage()) {
+        /* nothing here yet, and nothing invented — do not even save */
+        blankDevice = true;
+        db = blank();
+        return db;
+      }
+      db = seed(); save(); return db;
+    }
     migrate(db);
     return db;
   }
 
   /* older saved data may predate accounts — fill the gaps in place */
   function migrate(d) {
-    if (!d.admin) d.admin = { username: 'admin', pinHash: hash('1234'), phone: '', photo: '' };
+    if (!d.admin) d.admin = { username: 'admin', pinHash: hash('1234'), phone: '', photo: '', devices: [] };
     if (!('phone' in d.admin)) d.admin.phone = '';
     if (!('photo' in d.admin)) d.admin.photo = '';
+    if (!d.admin.devices) d.admin.devices = [];
     if (!d.tutors) d.tutors = [];
     if (!d.activity) d.activity = [];
     if (!d.complaints) d.complaints = [];
@@ -208,7 +230,7 @@ var NZ = (function () {
 
   function studentByUsername(u) {
     if (!u) return null;
-    u = String(u).trim().toLowerCase();
+    u = tidy(u).toLowerCase();
     var f = load().students.filter(function (s) { return (s.username || '').toLowerCase() === u; });
     return f[0] || null;
   }
@@ -395,16 +417,85 @@ var NZ = (function () {
 
   /* ============================================================ ADMIN */
   function adminUser() { return load().admin.username; }
+
+  /* This browser's own name for itself. Written once and kept, so signing
+     in again from the same laptop does not eat another of the three
+     slots.                                                             */
+  function deviceId() {
+    var k = 'nz.device';
+    var v = null;
+    try { v = localStorage.getItem(k); } catch (e) {}
+    if (!v) {
+      v = 'dev-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+      try { localStorage.setItem(k, v); } catch (e) {}
+    }
+    return v;
+  }
+
+  /* a readable guess at what this machine is, for the list under Setup */
+  function deviceLabel() {
+    var ua = (navigator && navigator.userAgent) || '';
+    var os = /Android/i.test(ua) ? 'Android' :
+             /iPhone|iPad|iPod/i.test(ua) ? 'iPhone or iPad' :
+             /Windows/i.test(ua) ? 'Windows' :
+             /Mac OS X/i.test(ua) ? 'Mac' :
+             /Linux/i.test(ua) ? 'Linux' : 'This device';
+    var br = /Edg\//i.test(ua) ? 'Edge' :
+             /OPR\//i.test(ua) ? 'Opera' :
+             /Chrome\//i.test(ua) ? 'Chrome' :
+             /Firefox\//i.test(ua) ? 'Firefox' :
+             /Safari\//i.test(ua) ? 'Safari' : 'browser';
+    return os + ' · ' + br;
+  }
+
+  var ADMIN_DEVICE_LIMIT = 3;
+
+  function adminDevices() { return (load().admin.devices || []).slice(); }
+
+  function forgetAdminDevice(id) {
+    var a = load().admin;
+    a.devices = (a.devices || []).filter(function (d) { return d.id !== id; });
+    logEvent('Admin', 'Removed a signed-in device', '');
+    save();
+  }
+
+  /* Returns true when signed in, or a reason string when refused. The PIN
+     is checked first so a wrong PIN never reveals anything about which
+     devices are registered.                                            */
   function adminLogin(u, pin) {
     var a = load().admin;
-    var ok = String(u).trim().toLowerCase() === a.username.toLowerCase() && hash(pin) === a.pinHash;
-    if (ok) { setActor('admin', 'Tapuwa'); logEvent('Admin', 'Signed in', ''); save(); }
-    return ok;
+    var ok = tidy(u).toLowerCase() === a.username.toLowerCase() &&
+             (hash(tidy(pin)) === a.pinHash || hash(String(pin)) === a.pinHash);
+    if (!ok) return false;
+
+    if (!a.devices) a.devices = [];
+    var id = deviceId();
+    var known = a.devices.filter(function (d) { return d.id === id; })[0];
+
+    if (!known) {
+      if (a.devices.length >= ADMIN_DEVICE_LIMIT) {
+        logEvent('Admin', 'Sign-in refused', 'a fourth device tried to sign in');
+        notify('account', 'Sign-in blocked on a new device',
+               'Three devices are already signed in. Remove one under Setup to allow another.', true);
+        save();
+        return 'limit';
+      }
+      a.devices.push({ id: id, label: deviceLabel(), at: new Date().toISOString(), seen: new Date().toISOString() });
+      logEvent('Admin', 'New device signed in', deviceLabel());
+    } else {
+      known.seen = new Date().toISOString();
+      known.label = deviceLabel();
+    }
+
+    setActor('admin', 'Tapuwa');
+    logEvent('Admin', 'Signed in', '');
+    save();
+    return true;
   }
   function setAdmin(u, pin, phone) {
     var a = load().admin;
     if (u) a.username = String(u).trim();
-    if (pin) a.pinHash = hash(pin);
+    if (pin) a.pinHash = hash(tidy(pin));
     if (phone != null) a.phone = String(phone).trim();
     logEvent('Admin', 'Updated admin login', '');
     save();
@@ -419,7 +510,7 @@ var NZ = (function () {
   }
   function tutorByUsername(u) {
     if (!u) return null;
-    u = String(u).trim().toLowerCase();
+    u = tidy(u).toLowerCase();
     var f = load().tutors.filter(function (t) { return t.username.toLowerCase() === u; });
     return f[0] || null;
   }
@@ -477,7 +568,7 @@ var NZ = (function () {
   function tutorSetPin(u, pin) {
     var t = tutorByUsername(u);
     if (!t || !t.active) return false;
-    t.pinHash = hash(pin);
+    t.pinHash = hash(tidy(pin));
     setActor('tutor', t.name);
     logEvent('Tutor · ' + t.name, 'Set PIN and signed in', '');
     save();
@@ -486,16 +577,25 @@ var NZ = (function () {
   function tutorLogin(u, pin) {
     var t = tutorByUsername(u);
     if (!t || !t.active || !t.pinHash) return false;
-    var ok = hash(pin) === t.pinHash;
+    /* older PINs were stored untrimmed — accept both so nobody is stranded */
+    var ok = hash(tidy(pin)) === t.pinHash || hash(String(pin)) === t.pinHash;
     if (ok) { setActor('tutor', t.name); logEvent('Tutor · ' + t.name, 'Signed in', ''); save(); }
     return ok;
   }
 
   /* ================================================= STUDENT SIGN-IN */
+  /* Be forgiving about how the details arrive. People paste them out of
+     WhatsApp, which drags a space along, and phone keyboards capitalise
+     the first letter of anything they type. Neither should lock a
+     student out of their own dashboard, so trim both and compare the
+     password without case. The generated passwords are lowercase words
+     plus digits, so nothing is lost by doing that.                     */
+  function tidy(s) { return String(s == null ? '' : s).replace(/\s+/g, ''); }
+
   function studentLogin(u, pw) {
     var s = studentByUsername(u);
     if (!s || s.status !== 'active' || !s.active) return null;
-    if (s.password !== String(pw)) return null;
+    if (tidy(s.password).toLowerCase() !== tidy(pw).toLowerCase()) return null;
     setActor('student', (s.firstName + ' ' + s.surname).trim());
     logEvent('Student · ' + (s.firstName + ' ' + s.surname).trim(), 'Signed in', '');
     save();
@@ -962,6 +1062,8 @@ var NZ = (function () {
 
     /* accounts + auth */
     adminUser: adminUser, adminLogin: adminLogin, setAdmin: setAdmin, adminPhone: adminPhone,
+    adminDevices: adminDevices, forgetAdminDevice: forgetAdminDevice,
+    deviceId: deviceId, ADMIN_DEVICE_LIMIT: ADMIN_DEVICE_LIMIT,
     tutors: tutors, tutor: tutor, tutorName: tutorName, tutorByUsername: tutorByUsername,
     addTutor: addTutor, updateTutor: updateTutor, setTutorActive: setTutorActive, removeTutor: removeTutor,
     tutorNeedsPin: tutorNeedsPin, tutorSetPin: tutorSetPin, tutorLogin: tutorLogin,
@@ -984,6 +1086,7 @@ var NZ = (function () {
 
     /* photos */
     setPhoto: setPhoto, initials: initials, shrinkPhoto: shrinkPhoto,
+    isBlankDevice: isBlankDevice,
 
     /* students */
     students: students, student: student, studentByCode: studentByCode,
