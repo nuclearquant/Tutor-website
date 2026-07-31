@@ -80,6 +80,8 @@
     <button class="tab" role="tab" aria-selected="true"  data-panel="p-lessons">My lessons</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-pay">Payments</button>
     <button class="tab" role="tab" aria-selected="false" data-panel="p-msg">Messages <span class="pip" id="msgPip" hidden>0</span></button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-me">My profile</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="p-help">Contact office <span class="pip" id="helpPip" hidden>0</span></button>
   </div>
 </div>
 
@@ -177,13 +179,40 @@
   <!-- =========================================================== MESSAGES -->
   <section class="panel" id="p-msg" role="tabpanel">
     <div class="head">
-      <div><h2>Messages</h2><p>Write to Tapuwa here. Questions about a topic, changing a time, anything.</p></div>
+      <div><h2>Messages</h2><p>Write to your tutor here. Questions about a topic, changing a time, anything.</p></div>
     </div>
     <div class="chat">
       <div class="chat__log" id="chatLog"></div>
       <div class="chat__new">
         <textarea id="chatText" placeholder="Write a message…" aria-label="Your message"></textarea>
         <button class="btn btn--flame" id="chatSend">Send</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== MY PROFILE -->
+  <section class="panel" id="p-me" role="tabpanel">
+    <div class="head"><div><h2>My profile</h2>
+      <p>Your picture and name tag, and who is teaching you.</p></div></div>
+    <div class="grid2">
+      <div class="box"><h3>Me</h3>
+        <div id="meCard" style="max-width:200px;margin:.6rem auto 0"></div>
+      </div>
+      <div class="box"><h3>My tutor</h3>
+        <div id="tutorCard" style="max-width:200px;margin:.6rem auto 0"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================== CONTACT ADMIN -->
+  <section class="panel" id="p-help" role="tabpanel">
+    <div class="head"><div><h2>Contact the office</h2>
+      <p>A private line to Tapuwa, who runs NUCLEAR-ZONE. Use it for a complaint, a payment question, or anything you would rather not put in the lesson chat. Your tutor does not see this.</p></div></div>
+    <div class="helpbox">
+      <div class="help__log" id="helpLog"></div>
+      <div class="help__new">
+        <textarea id="helpText" placeholder="Write to the office…  (Ctrl+Enter sends)"></textarea>
+        <button class="btn btn--flame" id="helpSend">Send</button>
       </div>
     </div>
   </section>
@@ -246,6 +275,8 @@
       document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
       $(t.dataset.panel).classList.add('on');
       if (t.dataset.panel === 'p-msg'){ NZ.markRead(me.id,'student'); drawChat(); drawPip(); }
+      if (t.dataset.panel === 'p-help') drawHelp();
+      if (t.dataset.panel === 'p-me') drawMe();
     });
   });
 
@@ -492,7 +523,76 @@
            String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
   }
 
-  function drawAll(){ drawNext(); drawCards(); drawLessons(); drawPay(); drawChat(); drawPip(); }
+  /* ============================================ name tags and pictures */
+  function personCard(kind, o){
+    var nm  = kind === 'tutor' ? o.name : (o.firstName + ' ' + o.surname).trim();
+    var sub = kind === 'tutor' ? 'My tutor' : (o.level || 'Student');
+    var pic = o.photo
+      ? '<img class="person__pic" src="' + o.photo + '" alt="">'
+      : '<span class="person__pic person__pic--empty">' + esc(NZ.initials(nm)) + '</span>';
+    /* a student may change their own picture; the tutor's is not theirs to touch */
+    var acts = kind === 'student'
+      ? '<div class="person__acts">' +
+          '<label class="btn btn--sm btn--quiet pickpic">' + (o.photo ? 'Change' : 'Add photo') +
+            '<input type="file" accept="image/*" data-pic="student:' + o.id + '"></label>' +
+          (o.photo ? '<button class="btn btn--sm btn--quiet" data-clearpic="student:' + o.id + '">Remove</button>' : '') +
+        '</div>'
+      : '';
+    return '<div class="person person--' + kind + '">' + pic +
+      '<div class="person__tag">' +
+        '<div class="person__name">' + esc(nm) + '</div>' +
+        '<div class="person__sub">' + esc(sub) + '</div>' +
+        (kind === 'tutor' ? '<div class="person__degree">' + esc(o.degree || '') + '</div>' : '') +
+      '</div>' + acts + '</div>';
+  }
+  function drawMe(){
+    var s = NZ.student(me.id) || me;
+    $('meCard').innerHTML = personCard('student', s);
+    var t = NZ.tutor(s.tutorId);
+    $('tutorCard').innerHTML = t ? personCard('tutor', t)
+      : '<p style="color:var(--slate);font-size:.9rem">No tutor assigned yet.</p>';
+  }
+  document.addEventListener('change', function(e){
+    var inp = e.target.closest('[data-pic]');
+    if (!inp) return;
+    var parts = inp.dataset.pic.split(':'), f = inp.files[0];
+    if (!f) return;
+    NZ.shrinkPhoto(f, function(dataUrl){ NZ.setPhoto(parts[0], parts[1], dataUrl); drawMe(); },
+                      function(msg){ alert(msg); });
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-clearpic]');
+    if (!b) return;
+    var parts = b.dataset.clearpic.split(':');
+    NZ.setPhoto(parts[0], parts[1], ''); drawMe();
+  });
+
+  /* ================================================ the private office line */
+  function drawHelp(){
+    var msgs = NZ.complaints('student', me.id);
+    /* only counts as read once this tab is actually on screen */
+    if ($('p-help').classList.contains('on')) NZ.markComplaintsRead('student', 'student', me.id);
+    $('helpLog').innerHTML = msgs.length ? msgs.map(function(c){
+      return '<div class="help__msg help__msg--' + (c.from === 'student' ? 'mine' : 'them') + '">' +
+        esc(c.text) + '<small>' + (c.from === 'student' ? 'You' : 'The office') + ' · ' + when(c.at) + '</small></div>';
+    }).join('') : '<p style="color:var(--slate);font-size:.9rem">Nothing here yet. Anything you write goes straight to the office.</p>';
+    $('helpLog').scrollTop = $('helpLog').scrollHeight;
+    var un = NZ.unreadComplaints('student', 'student', me.id);
+    $('helpPip').hidden = un === 0; $('helpPip').textContent = un;
+  }
+  function sendHelp(){
+    var t = $('helpText').value;
+    if (!t.trim()) return;
+    NZ.addComplaint('student', me.id, 'student', t);
+    $('helpText').value = '';
+    drawHelp();
+  }
+  $('helpSend').addEventListener('click', sendHelp);
+  $('helpText').addEventListener('keydown', function(e){
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') sendHelp();
+  });
+
+  function drawAll(){ drawNext(); drawCards(); drawLessons(); drawPay(); drawChat(); drawPip(); drawMe(); drawHelp(); }
 
   /* if the tutor edits a row while this page is open, it updates itself */
   NZ.onChange(function(){
