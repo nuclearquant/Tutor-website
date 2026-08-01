@@ -33,11 +33,24 @@ var NZ = (function () {
   var db = null;
   var listeners = [];
 
+  /* ------------------------------------------------------ your login */
+  /* The owner account. Change these two lines and every dashboard picks
+     the new details up — including browsers that already hold old data,
+     because CREDS_VERSION below forces a one-time rewrite.            */
+  var ADMIN_USER = 'tapz007';
+  var ADMIN_PIN  = '19458779';
+  var CREDS_VERSION = 2;
+
+  function freshAdmin() {
+    return { username: ADMIN_USER, pinHash: hash(ADMIN_PIN), phone: '', photo: '', devices: [] };
+  }
+
   function blank() {
     return {
-      admin: { username: 'admin', pinHash: hash('1234'), phone: '', photo: '', devices: [] },
+      admin: freshAdmin(),
       tutors: [], students: [], lessons: [], messages: [],
       complaints: [], notices: [], activity: [],
+      credsVersion: CREDS_VERSION,
       seq: 1
     };
   }
@@ -71,15 +84,26 @@ var NZ = (function () {
       db = seed(); save(); return db;
     }
     migrate(db);
+    save();          /* the repairs above are worth keeping */
     return db;
   }
 
   /* older saved data may predate accounts — fill the gaps in place */
   function migrate(d) {
-    if (!d.admin) d.admin = { username: 'admin', pinHash: hash('1234'), phone: '', photo: '', devices: [] };
+    if (!d.admin) d.admin = freshAdmin();
     if (!('phone' in d.admin)) d.admin.phone = '';
     if (!('photo' in d.admin)) d.admin.photo = '';
     if (!d.admin.devices) d.admin.devices = [];
+
+    /* One-time: browsers that already hold data were still holding the old
+       admin/1234 login. Rewrite it to the real one, once, and keep the
+       registered devices so nobody is locked out of their own console.  */
+    if (d.credsVersion !== CREDS_VERSION) {
+      d.admin.username = ADMIN_USER;
+      d.admin.pinHash  = hash(ADMIN_PIN);
+      d.credsVersion   = CREDS_VERSION;
+    }
+
     if (!d.tutors) d.tutors = [];
     if (!d.activity) d.activity = [];
     if (!d.complaints) d.complaints = [];
@@ -87,6 +111,10 @@ var NZ = (function () {
     d.tutors.forEach(function (t) {
       if (!('photo' in t)) t.photo = '';
       if (!('degree' in t)) t.degree = '';
+      /* a tutor with no active flag at all was being refused at sign-in */
+      if (!('active' in t)) t.active = true;
+      if (!('username' in t)) t.username = '';
+      if (!('pinHash' in t)) t.pinHash = '';
     });
     d.students.forEach(function (s) {
       if (!s.status) s.status = 'active';
@@ -94,6 +122,15 @@ var NZ = (function () {
       if (!('username' in s)) s.username = '';
       if (!('password' in s)) s.password = '';
       if (!('photo' in s)) s.photo = '';
+      /* THE SIGN-IN BUG. studentLogin needs BOTH status === 'active' and
+         active === true. Students saved before the active flag existed
+         came back undefined, so a perfectly correct password was refused
+         with "that username or password does not match". Derive it from
+         the status they already have.                                  */
+      if (typeof s.active !== 'boolean') s.active = (s.status !== 'suspended');
+      /* An accepted student with no password can never sign in. Mint one
+         so the admin can send it, rather than leaving a dead account.  */
+      if (s.status === 'active' && s.username && !s.password) s.password = newPassword();
     });
     d.lessons.forEach(function (l) {
       if (!l.flags) l.flags = {};
@@ -563,11 +600,11 @@ var NZ = (function () {
   /* first sign-in has no PIN yet → the dashboard calls tutorSetPin */
   function tutorNeedsPin(u) {
     var t = tutorByUsername(u);
-    return !!(t && t.active && !t.pinHash);
+    return !!(t && t.active !== false && !t.pinHash);
   }
   function tutorSetPin(u, pin) {
     var t = tutorByUsername(u);
-    if (!t || !t.active) return false;
+    if (!t || t.active === false) return false;
     t.pinHash = hash(tidy(pin));
     setActor('tutor', t.name);
     logEvent('Tutor · ' + t.name, 'Set PIN and signed in', '');
@@ -576,11 +613,21 @@ var NZ = (function () {
   }
   function tutorLogin(u, pin) {
     var t = tutorByUsername(u);
-    if (!t || !t.active || !t.pinHash) return false;
+    if (!t || t.active === false || !t.pinHash) return false;
     /* older PINs were stored untrimmed — accept both so nobody is stranded */
     var ok = hash(tidy(pin)) === t.pinHash || hash(String(pin)) === t.pinHash;
     if (ok) { setActor('tutor', t.name); logEvent('Tutor · ' + t.name, 'Signed in', ''); save(); }
     return ok;
+  }
+
+  function whyTutorLoginFailed(u, pin) {
+    if (blankDevice) return 'blank-device';
+    var t = tutorByUsername(u);
+    if (!t) return 'no-such-user';
+    if (t.active === false) return 'suspended';
+    if (!t.pinHash) return 'needs-pin';
+    if (hash(tidy(pin)) !== t.pinHash && hash(String(pin)) !== t.pinHash) return 'wrong-pin';
+    return 'ok';
   }
 
   /* ================================================= STUDENT SIGN-IN */
@@ -592,14 +639,32 @@ var NZ = (function () {
      plus digits, so nothing is lost by doing that.                     */
   function tidy(s) { return String(s == null ? '' : s).replace(/\s+/g, ''); }
 
+  /* Returns the student on success, or null. whyStudentLoginFailed() below
+     tells the dashboard which of the several possible reasons applied, so
+     the screen can say something true instead of always blaming the
+     password.                                                          */
   function studentLogin(u, pw) {
     var s = studentByUsername(u);
-    if (!s || s.status !== 'active' || !s.active) return null;
+    if (!s) return null;
+    if (s.status === 'suspended' || s.active === false) return null;
+    if (s.status === 'applicant') return null;
+    if (!s.password) return null;
     if (tidy(s.password).toLowerCase() !== tidy(pw).toLowerCase()) return null;
     setActor('student', (s.firstName + ' ' + s.surname).trim());
     logEvent('Student · ' + (s.firstName + ' ' + s.surname).trim(), 'Signed in', '');
     save();
     return s;
+  }
+
+  function whyStudentLoginFailed(u, pw) {
+    if (blankDevice) return 'blank-device';
+    var s = studentByUsername(u);
+    if (!s) return 'no-such-user';
+    if (s.status === 'applicant') return 'not-accepted';
+    if (s.status === 'suspended' || s.active === false) return 'suspended';
+    if (!s.password) return 'no-password';
+    if (tidy(s.password).toLowerCase() !== tidy(pw).toLowerCase()) return 'wrong-password';
+    return 'ok';
   }
 
   /* ============================================= SCOPING (who sees who) */
@@ -990,10 +1055,9 @@ var NZ = (function () {
       return x.getFullYear() + '-' + pad(x.getMonth() + 1) + '-' + pad(x.getDate());
     };
 
-    /* the tutor (you). Username tapuwa, PIN already set to 1234 so the demo
-       opens straight away — change it on first real use. */
+    /* the tutor (you). No PIN is set, so the first sign-in on tutor.html
+       asks you to choose one — same as any tutor you register. */
     var tut = addTutor({ name: 'Tapuwa Sithole', username: 'tapuwa', email: 'tapuwasithole7@gmail.com', phone: '060 778 1905', degree: 'PhD candidate, Nuclear Physics (UNISA)' });
-    tut.pinHash = hash('1234');
 
     var a = addStudent({
       firstName: 'Naledi', surname: 'Mokoena', role: 'Learner', level: 'Grade 12',
@@ -1067,6 +1131,7 @@ var NZ = (function () {
     tutors: tutors, tutor: tutor, tutorName: tutorName, tutorByUsername: tutorByUsername,
     addTutor: addTutor, updateTutor: updateTutor, setTutorActive: setTutorActive, removeTutor: removeTutor,
     tutorNeedsPin: tutorNeedsPin, tutorSetPin: tutorSetPin, tutorLogin: tutorLogin,
+    whyTutorLoginFailed: whyTutorLoginFailed, whyStudentLoginFailed: whyStudentLoginFailed,
     studentLogin: studentLogin, studentByUsername: studentByUsername,
     resetStudentPassword: resetStudentPassword, resetTutorPin: resetTutorPin,
 
