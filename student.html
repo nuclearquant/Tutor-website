@@ -255,19 +255,29 @@
     if (!u || !pw){ $('codeErr').textContent = 'Enter your username and password.'; return; }
     if (signIn(u, pw)){ $('codeErr').textContent = ''; return; }
 
-    /* Nothing has ever been set up in THIS browser. Saying "wrong
-       password" here would be a lie — the account is real, it just lives
-       on the machine Tapuwa set it up on. */
-    if (NZ.isBlankDevice()){
-      $('codeErr').innerHTML = 'This device has no lessons on it yet. Your dashboard opens on the ' +
-        'device Tapuwa set it up on — message him and he will sort it out.';
-      return;
+    switch (NZ.whyStudentLoginFailed(u, pw)){
+      case 'blank-device':
+        /* Nothing has ever been set up in THIS browser. Saying "wrong
+           password" here would be a lie — the account is real, it just
+           lives on the machine Tapuwa set it up on. */
+        $('codeErr').innerHTML = 'This device has no lessons on it yet. Your dashboard opens on the ' +
+          'device Tapuwa set it up on — message him and he will sort it out.';
+        return;
+      case 'no-such-user':
+        $('codeErr').textContent = 'No account here uses that username. Check it against the message Tapuwa sent you.';
+        break;
+      case 'not-accepted':
+        $('codeErr').textContent = 'Your booking is in, but the account is not open yet. Tapuwa will send your password shortly.';
+        break;
+      case 'suspended':
+        $('codeErr').textContent = 'This account is paused. Please contact Tapuwa.';
+        break;
+      case 'no-password':
+        $('codeErr').textContent = 'This account has no password set yet. Ask Tapuwa to send you one.';
+        break;
+      default:
+        $('codeErr').textContent = 'That password does not match. Ask Tapuwa to resend it.';
     }
-    var s = NZ.studentByUsername(u);
-    if (s && (s.status !== 'active' || !s.active))
-      $('codeErr').textContent = 'This account is not active yet. Please contact Tapuwa.';
-    else
-      $('codeErr').textContent = 'That username or password does not match. Ask Tapuwa to resend it.';
     $('pw').select();
   }
   $('outBtn').addEventListener('click', function(){
