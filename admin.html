@@ -21,12 +21,12 @@
     <h1>Owner <span class="gate__accent">console</span></h1>
     <p>Sign in to oversee every tutor, student and lesson.</p>
     <label class="lbl" for="u">Username</label>
-    <input id="u" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="admin" style="margin-bottom:.6rem">
+    <input id="u" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="tapz007" style="margin-bottom:.6rem">
     <label class="lbl" for="p">PIN</label>
     <input id="p" type="password" inputmode="numeric" autocomplete="current-password" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="••••">
     <p class="gate__err" id="err"></p>
     <button class="btn btn--flame" id="go" style="width:100%;justify-content:center">Open the console</button>
-    <p style="font-size:.78rem;color:var(--slate);margin:.9rem 0 0">First time in? Username <b>admin</b>, PIN <b>1234</b>. Change both under Setup.</p>
+    <p style="font-size:.78rem;color:var(--slate);margin:.9rem 0 0">Username <b>tapz007</b>. Change the PIN under Setup once you are in.</p>
     <div class="gate__switch"><a href="tutor.html">Tutor sign-in</a><a href="student.html">Student sign-in</a><a href="index.html">Back to website</a></div>
   </div>
 </div>
@@ -273,7 +273,7 @@
   $('p').addEventListener('keydown',function(e){if(e.key==='Enter')tryIn();});
   $('u').addEventListener('keydown',function(e){if(e.key==='Enter')$('p').focus();});
   function tryIn(){
-    var r=NZ.adminLogin($('u').value||'admin',$('p').value);
+    var r=NZ.adminLogin($('u').value||'tapz007',$('p').value);
     if(r===true){ $('err').textContent=''; unlock(); return; }
     if(r==='limit'){
       $('err').innerHTML='Three devices are already signed in to this console. '+
