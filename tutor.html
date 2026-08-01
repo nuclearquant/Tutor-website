@@ -334,16 +334,25 @@
     }
     if (NZ.tutorLogin(u, pin)){ me = NZ.tutorByUsername(u); $('pinErr').textContent = ''; unlock(); return; }
 
-    /* Nothing has ever been set up in THIS browser — the account exists,
-       just not here. Do not call a correct PIN wrong. */
-    if (NZ.isBlankDevice()){
-      $('pinErr').innerHTML = 'This device has no register on it yet. Your dashboard opens on the ' +
-        'device the admin set it up on — ask him to sort it out.';
-      return;
+    switch (NZ.whyTutorLoginFailed(u, pin)){
+      case 'blank-device':
+        /* Nothing has ever been set up in THIS browser — the account
+           exists, just not here. Do not call a correct PIN wrong. */
+        $('pinErr').innerHTML = 'This device has no register on it yet. Your dashboard opens on the ' +
+          'device the admin set it up on — ask him to sort it out.';
+        return;
+      case 'no-such-user':
+        $('pinErr').textContent = 'No tutor here uses that username. Check it against the message you were sent.';
+        break;
+      case 'suspended':
+        $('pinErr').textContent = 'This account is suspended. Ask the admin to reactivate it.';
+        break;
+      case 'needs-pin':
+        $('pinErr').textContent = 'Choose a PIN to finish setting up — type it again and press enter.';
+        break;
+      default:
+        $('pinErr').textContent = 'That PIN does not match. Ask the admin to reset it for you.';
     }
-    var t = NZ.tutorByUsername(u);
-    if (t && !t.active) $('pinErr').textContent = 'This account is suspended. Ask the admin to reactivate it.';
-    else $('pinErr').textContent = 'That username or PIN does not match.';
     $('pin').select();
   }
 
